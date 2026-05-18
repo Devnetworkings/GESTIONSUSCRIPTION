@@ -1,0 +1,59 @@
+body {
+    background-color: whitesmoke;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; 
+    margin: 0;
+}
+
+#formu {
+    background-color: #435070;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    padding: 45px;
+    border-radius: 30px;
+    box-sizing: border-box;
+}
+
+    #formu input {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+    }
+
+#footer {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+#send {
+    background-color: #72C9FF;
+    color: white;
+    font-family: 'Arial Rounded MT';
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+input:hover {
+    transform: translateY(-3px);
+    /* 2. Aumenta la sombra para que se vea más profunda (simulando altura) */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+#create-recovery{
+    display: flex;
+    justify-content: space-between; /* Empuja los botones a los extremos */
+    width: 100%; /* Ocupa todo el ancho disponible */
+    margin-top: 20px; /* Separa el div del botón de Enviar */
+    box-sizing: border-box;
+}
+
+#formu h3{
+    color:white;text-align:center;
+}
