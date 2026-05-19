@@ -5,3 +5,5 @@ $password= $_POST['password'];
 echo $name." ". $password;
 
 ?>
+
+<a href="dashboard.php">hii</a>

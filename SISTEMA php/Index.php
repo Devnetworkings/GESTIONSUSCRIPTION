@@ -1,4 +1,4 @@
-﻿<?php
+<?php
     
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -9,11 +9,11 @@
 </head>
 <body>
     <div>
-        <form action="loginp.php" method="post" id="formu">
+        <form action="dashboard.php" method="post" id="formu">
             <h3> INICIAR SESIÓN</h3>
             <input type="text" placeholder="OPERADOR" name="operator">
             <input type="password" placeholder="PASSWORD" name="password">
-            <input type="submit" id="send"/>
+           <input type="submit" id="send"/>
 
             <div id="create-recovery"> 
             <input type="button" value="C:O" />
@@ -22,7 +22,8 @@
         </form>
 
     </div>
-    <div id="footer"></div>
+    <div id="footer"><h2>Desarrollado por Devnetworking </h2></div>
+    <script src="lg.js"></script>
 </body>
 
 
