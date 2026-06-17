@@ -19,12 +19,13 @@ $display_dashboard = 'none';
 </head>
 <body>
 
-    <div id="loginpage" style="display: <?php echo $display_login; ?>;">
+  <div id="loginpage" style="display: <?php echo $display_login; ?>;">
+        
         <form id="formu" method="POST" onsubmit="procesarFormulario(event, 'auth.php', (res) => { 
             document.getElementById('loginpage').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('nombre-actor').innerText = res.operador.toUpperCase();
-            cargarVista('vacio'); 
+            cargarVista('clientes'); 
         })">
             <h3>INICIAR SESIÓN</h3>
             <input type="text" placeholder="OPERADOR" name="operator" required>
@@ -36,21 +37,40 @@ $display_dashboard = 'none';
             </div>
         </form>
 
-        <form id="form-register" method="POST" style="display:none;" onsubmit="procesarFormulario(event, 'register.php', () => { 
-            alert('¡Operador registrado!'); 
+        <form id="form-register" style="display: none;" onsubmit="procesarFormulario(event, 'register.php', (res) => { 
+            alert('¡Operador registrado con éxito! Bienvenido al equipo de The Grand Gym 3000.'); 
             toggleLogin('login'); 
+            document.getElementById('form-register').reset(); 
         })">
             <h3>NUEVO OPERADOR</h3>
+            
             <div class="register-grid">
-                <input type="text" placeholder="NOMBRES" name="nombres" required>
-                <input type="text" placeholder="APELLIDOS" name="apellidos" required>
-                <input type="text" placeholder="CÉDULA" name="ci" required>
-                <input type="text" placeholder="TELÉFONO" name="tlf" required>
-                <input type="text" placeholder="DIRECCIÓN" name="direccion" required>
+                <input type="text" name="nombres" placeholder="Nombres" required>
+                <input type="text" name="apellidos" placeholder="Apellidos" required>
+                
+                <div style="display: flex; gap: 5px; grid-column: span 1; margin: 0;">
+                    <select name="tipo_doc" style="width: 30%; border-radius: 8px; border: none; padding: 14px; background-color: #f8fafc; font-weight: 600; color: #334155; outline: none;">
+                        <option value="V">V</option>
+                        <option value="E">E</option>
+                    </select>
+                    <input type="number" name="ci" placeholder="Cédula" required style="width: 70%;">
+                </div>
+                
+                <input type="number" name="tlf" placeholder="Teléfono (Ej: 04141234567)" required>
+                
+                <input type="text" name="contacto" placeholder="Corre Electrónico" style="grid-column: span 2;">
+                <input type="text" name="direccion" placeholder="Dirección de Habitación" style="grid-column: span 2;">
+
+                <hr class="divider" style="grid-column: span 2;">
+
+                <input type="text" name="username" placeholder="Usuario para el Sistema" required>
+                <input type="password" name="pw" placeholder="Contraseña Segura" required>
             </div>
-            <input type="submit" id="send-register" value="Registrar Operador" /> 
-            <input type="button" value="Volver al Login" onclick="toggleLogin('login')" class="btn-volver" />
+
+            <input type="submit" id="send-register" value="Registrar Operador">
+            <button type="button" class="btn-volver" onclick="toggleLogin('login')">Volver a la Taquilla</button>
         </form>
+
     </div>
 
     <div id="dashboard" style="display: <?php echo $display_dashboard; ?>;">
@@ -66,87 +86,140 @@ $display_dashboard = 'none';
         </nav>
         
         <div id="content">
-    <form id="form-cliente" class="payform-style" style="display:none;" onsubmit="procesarFormulario(event, 'registrar_cliente.php', (res) => { 
-    alert('¡Cliente registrado!'); 
-    cargarVista('clientes'); 
-})">
-    <h3>Registro de Cliente</h3>
-    
-    <div class="input-group full-width">
-        <input type="text" name="ci" placeholder="Cédula / Identificación" required />
+    <div id="vista-clientes">
+    <div class="clientes-header">
+        <h2>Directorio de Clientes</h2>
+        <button class="btn-nuevo" onclick="toggleFormularioCliente()">+ Nuevo Cliente</button>
     </div>
     
-    <div class="input-group-row">
-        <input type="text" name="nombres" placeholder="Nombres" required />
-        <input type="text" name="apellidos" placeholder="Apellidos" required />
+    <div class="clientes-layout">
+        <div class="tabla-container">
+            <table class="celtable" id="tabla-clientes">
+                <thead>
+                    <tr>
+                        <th>Cédula</th>
+                        <th>Nombres</th>
+                        <th>Teléfono</th>
+                        <th>Estatus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+
+        <form id="form-cliente" class="modo-lateral" style="display:none;" onsubmit="procesarFormulario(event, 'registrar_cliente.php', (res) => { 
+            alert('¡Cliente registrado!'); 
+            cargarTablaClientes(); /* Recarga la tabla mágicamente */
+            document.getElementById('form-cliente').reset();
+        })">
+            <h3>Registro Rápido</h3>
+            
+            <div class="input-group full-width">
+                <input type="text" name="ci" placeholder="Cédula / Identificación" required />
+            </div>
+            <div class="input-group-row">
+                <input type="text" name="nombres" placeholder="Nombres" required />
+                <input type="text" name="apellidos" placeholder="Apellidos" required />
+            </div>
+            <div class="input-group full-width">
+                <input type="text" name="tlf" placeholder="Teléfono" required />
+            </div>
+            <div class="input-group full-width">
+                <input type="email" name="email" placeholder="Correo Electrónico" />
+            </div>
+            <div class="input-group full-width">
+                <input type="text" name="direccion" placeholder="Dirección" />
+            </div>
+            <input type="submit" value="Guardar Cliente" class="full-width">
+        </form>
+    </div>
+</div>
+ 
+
+   <div id="vista-pagos" style="display: none; flex-direction: column; gap: 20px;">
+    <div class="clientes-header">
+        <h2>Historial de Transacciones</h2>
+        <button class="btn-nuevo" id="btn-nuevo-pago" onclick="toggleFormularioPago()">+ Nuevo Pago</button>
     </div>
     
-    <div class="input-group full-width">
-        <input type="text" name="tlf" placeholder="Teléfono" required />
+    <div class="clientes-layout">
+        
+        <div class="tabla-container">
+            <table class="celtable" id="tabla-pagos">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Referencia / Serie</th>
+                        <th>Monto</th>
+                        <th>Moneda</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+
+        <div id="addpay" class="modo-lateral" style="display:none;">
+            <form id="payform" onsubmit="procesarFormulario(event, 'registrar_pago.php', (res) => { 
+                alert('¡Transacción procesada con éxito!'); 
+                cargarTablaPagos(); /* Recargamos la tabla al instante */
+                document.getElementById('payform').reset();
+                adaptarFormularioPago(''); /* Limpiamos el campo dinámico */
+            })">
+                <h3>Registrar Nuevo Pago</h3>
+                
+                <div class="input-group full-width">
+                    <input type="text" name="nombre_cliente" placeholder="Nombre del cliente" required />
+                </div>
+                
+                <div class="input-group-row">
+                    <select name="tipo_documento" required>
+                        <option value="V">V</option>
+                        <option value="E">E</option>
+                        <option value="P">P</option>
+                    </select>
+                    <input type="number" name="cedula_identidad" placeholder="Cédula de identidad" required />
+                </div>
+
+                <div class="input-group-row">
+                    <select name="codigo_operadora" required>
+                        <option value="" disabled selected>Código...</option>
+                        <optgroup label="Líneas Móviles">
+                            <option value="0412">0412</option>
+                            <option value="0414">0414</option>
+                            <option value="0424">0424</option>
+                            <option value="0416">0416</option>
+                            <option value="0426">0426</option>
+                        </optgroup>
+                        <optgroup label="Líneas Fijas">
+                            <option value="0212">0212</option>
+                        </optgroup>
+                    </select>
+                    <input type="number" name="telefono" placeholder="Número de Teléfono" required />
+                </div>
+                
+                <div class="input-group">
+                    <select name="metodo_pago" id="metodo_pago" onchange="adaptarFormularioPago(this.value)" required> 
+                        <option value="" disabled selected>Método de pago</option>
+                        <option value="pagomovil">Pago Móvil</option>
+                        <option value="divisa">Divisa</option>
+                        <option value="transferencia">Transferencia</option>
+                    </select>        
+                </div>
+
+                <div class="input-group">
+                    <input type="number" name="monto" placeholder="Monto... $" step="0.01" required />
+                </div>
+
+                <div class="input-group full-width" id="contenedor-dinamico" style="display: none;">
+                    <input type="text" id="input-dinamico" name="reference" placeholder="" />
+                </div>
+                
+                <input type="submit" value="Procesar Transacción" class="full-width" />
+            </form>
+        </div>
     </div>
-    
-    <div class="input-group full-width">
-        <input type="email" name="email" placeholder="Correo Electrónico" />
-    </div>
-
-    <div class="input-group full-width">
-        <input type="text" name="direccion" placeholder="Dirección" />
-    </div>
-<input type="submit" value="Guardar Cliente" class="full-width">
-</form>
-
-    <div id="addpay" style="display:none;">
-    <form id="payform" onsubmit="procesarFormulario(event, 'registrar_pago.php', (res) => { 
-        alert('¡Transacción procesada con éxito!'); 
-        cargarVista('pagos'); 
-    })">
-        <h3>Registrar Nuevo Pago</h3>
-        
-        <div class="input-group full-width">
-            <input type="text" name="nombre_cliente" placeholder="Nombre del cliente" required />
-        </div>
-        
-        <div class="input-group-row">
-            <select name="tipo_documento" required>
-                <option value="V">V</option>
-                <option value="E">E</option>
-                <option value="P">P</option>
-            </select>
-            <input type="number" name="cedula_identidad" placeholder="Cédula de identidad" required />
-        </div>
-
-        <div class="input-group-row">
-            <select name="codigo_operadora" required>
-                <option value="" disabled selected>Código...</option>
-                <optgroup label="Líneas Móviles">
-                    <option value="0412">0412</option>
-                    <option value="0414">0414</option>
-                    <option value="0424">0424</option>
-                    <option value="0416">0416</option>
-                    <option value="0426">0426</option>
-                </optgroup>
-                <optgroup label="Líneas Fijas">
-                    <option value="0212">0212</option>
-                </optgroup>
-            </select>
-            <input type="number" name="telefono" placeholder="Número de Teléfono" required />
-        </div>
-        
-        <div class="input-group">
-            <select name="metodo_pago" required> 
-                <option value="" disabled selected>Método de pago</option>
-                <option value="pagomovil">Pago Móvil</option>
-                <option value="divisa">Divisa</option>
-                <option value="transferencia">Transferencia</option>
-            </select>        
-        </div>
-
-        <div class="input-group">
-            <input type="number" name="monto" placeholder="Monto... $" step="0.01" required />
-        </div>
-        
-        <input type="submit" value="Procesar Transacción" class="full-width" />
-    </form>
 </div>
 </div>
     </div>

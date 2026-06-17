@@ -397,6 +397,8 @@ input:hover {
     }
 
 /* Reutilizamos el estilo del payform para el formulario de clientes */
+/* Busca y reemplaza TODO el bloque final de #form-cliente con esto: */
+
 #form-cliente {
     background: #ffffff;
     border-radius: 16px;
@@ -405,9 +407,13 @@ input:hover {
     max-width: 650px;
     margin: 30px auto;
     border: 1px solid #eaeaea;
+    display: grid; /* Unificamos el display aquí */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
 }
 
     #form-cliente h3 {
+        grid-column: span 2; /* Esto hace que el título ocupe todo el ancho */
         margin-top: 0;
         margin-bottom: 25px;
         color: #111111;
@@ -418,24 +424,10 @@ input:hover {
         padding-bottom: 12px;
     }
 
-/* Aplicamos el mismo Grid del payform */
-#form-cliente {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
     #form-cliente .full-width {
         grid-column: span 2;
     }
 
-    #form-cliente .input-group-row {
-        grid-column: span 2;
-        display: flex;
-        gap: 12px;
-    }
-
-    /* Reutilizamos los inputs del payform */
     #form-cliente input {
         width: 100%;
         padding: 14px 16px;
@@ -444,13 +436,136 @@ input:hover {
         box-sizing: border-box;
     }
 
-    #form-cliente button {
-        grid-column: span 2;
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        color: white;
-        border: none;
-        padding: 16px;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
+        #form-cliente button,
+        #form-cliente input[type="submit"] {
+            grid-column: span 2;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+/* ==========================================
+   NUEVA ESCENA: DIRECTORIO DE CLIENTES
+   ========================================== */
+#vista-clientes {
+    display: none; /* Controlado por JS */
+    flex-direction: column;
+    gap: 20px;
+}
+
+.clientes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    padding: 15px 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+    .clientes-header h2 {
+        margin: 0;
+        color: #334155;
     }
+
+/* ==========================================
+   EL ACTOR: BOTÓN DE NUEVO CLIENTE
+   ========================================== */
+.btn-nuevo {
+    background: linear-gradient(135deg, #10b981, #059669); /* Verde éxito */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Transición suave para color, sombra y posición */
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+    .btn-nuevo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(16, 185, 129, 0.5);
+    }
+
+    /* EL ALTER EGO: MODO CERRAR (ROJO) */
+    .btn-nuevo.btn-cerrar {
+        background: linear-gradient(135deg, #ef4444, #b91c1c) !important; /* Rojo alerta forzado */
+        box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3) !important;
+    }
+
+        .btn-nuevo.btn-cerrar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.5) !important;
+        }
+
+.clientes-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.tabla-container {
+    flex: 1; /* La tabla ocupa todo el espacio posible */
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+
+/* Estética de la tabla (10 filas) */
+.celtable {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+    .celtable th {
+        background-color: #f8fafc;
+        padding: 15px;
+        color: #64748b;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .celtable td {
+        padding: 15px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        height: 50px; /* Altura fija para que las celdas vacías mantengan el diseño */
+    }
+
+    .celtable tr:hover {
+        background-color: #f8fafc;
+    }
+
+/* El formulario al lado de la tabla */
+#form-cliente.modo-lateral {
+    margin: 0;
+    width: 450px; /* Ancho fijo para que no aplaste la tabla */
+    animation: slideInRight 0.3s ease forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Los formularios forzados a no ser más anchos que esto */
+#form-cliente.modo-lateral, #addpay.modo-lateral {
+    margin: 0 !important;
+    width: 400px !important;
+    flex-shrink: 0;
+    animation: slideInRight 0.3s ease forwards;
+}
