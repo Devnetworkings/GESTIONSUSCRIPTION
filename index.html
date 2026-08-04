@@ -1,0 +1,425 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Gym 3000</title>
+
+    <!-- Tipografía Inter desde Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Opción 1: VIP Black & Gold (Élite / Premium) */
+        :root {
+            --primary: #F59E0B; /* Dorado ámbar */
+            --primary-hover: #D97706; /* Dorado oscuro para el hover */
+            --bg-dark: #111111; /* Negro profundo absoluto */
+            --card-bg: #1F2937; /* Gris asfalto elegante */
+            --text-main: #FFFFFF; /* Blanco puro */
+            --text-muted: #9CA3AF; /* Gris claro para subtítulos */
+            --accent: #FBBF24; /* Dorado brillante para los precios */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navbar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            background-color: rgba(17, 17, 17, 0.9);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #334155;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+            nav a:hover {
+                color: #fff;
+            }
+
+        .btn-header {
+            background-color: var(--primary);
+            color: #111 !important; /* Texto oscuro para contrastar con el botón dorado */
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+
+            .btn-header:hover {
+                background-color: var(--primary-hover);
+            }
+
+        /* Hero / Comunidad Section con la Imagen */
+        .hero {
+            position: relative;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 1rem;
+            background: linear-gradient(to bottom, rgba(17, 17, 17, 0.75), var(--bg-dark)), url('GG upscale 4k.png') center/cover no-repeat;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            z-index: 2;
+        }
+
+        .hero h1 {
+            font-size: 3.8rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+            letter-spacing: -1px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #e2e8f0;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        /* Planes Section */
+        .plans-section {
+            padding: 5rem 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+            .section-title h2 {
+                font-size: 2.5rem;
+                font-weight: 800;
+            }
+
+            .section-title p {
+                color: var(--text-muted);
+            }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .plan-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            border: 1px solid #374151;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+
+            .plan-card:hover {
+                transform: translateY(-5px);
+                border-color: var(--primary);
+                box-shadow: 0 10px 25px rgba(245, 158, 11, 0.1);
+            }
+
+            .plan-card h3 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+                color: #fff;
+            }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+            .price span {
+                font-size: 1rem;
+                color: var(--text-muted);
+                font-weight: 400;
+            }
+
+        .features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+            .features li {
+                margin-bottom: 0.8rem;
+                color: #D1D5DB;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+        .btn-plan {
+            display: block;
+            text-align: center;
+            background-color: var(--primary);
+            color: #111; /* Texto oscuro para contraste */
+            padding: 0.8rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+
+            .btn-plan:hover {
+                background-color: var(--primary-hover);
+            }
+
+        /* App Data Entry / App Gestor */
+        .app-section {
+            padding: 5rem 5%;
+            background-color: #0A0A0A;
+            border-top: 1px solid #1F2937;
+        }
+
+        .mockup-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .mockup-item {
+            background-color: var(--card-bg);
+            border: 2px dashed #4B5563;
+            border-radius: 16px;
+            height: 480px; /* Tamaño grande para la toma */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            position: relative;
+            overflow: hidden;
+        }
+
+            .mockup-item p {
+                font-weight: 600;
+                font-size: 1.2rem;
+            }
+
+        .mockup-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #111;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            z-index: 10;
+        }
+
+        /* MAGIA DE CÁMARA: Ajuste SOLO para las imágenes designadas */
+        /* MAGIA DE CÁMARA: Ajuste de borde a borde para las imágenes designadas */
+        .mockup-item.toma-completa {
+            height: auto; /* Dejamos que la imagen dicte la altura de la caja */
+            padding-top: 3.5rem; /* Damos espacio arriba para que la etiqueta no tape la interfaz */
+        }
+
+            .mockup-item.toma-completa p {
+                margin: 0;
+                width: 100%;
+                line-height: 0;
+            }
+
+            .mockup-item.toma-completa img {
+                width: 100%; /* Ocupa absolutamente todo el ancho de la caja */
+                height: auto; /* Mantiene su proporción 100% original sin recortes */
+                display: block;
+                border-radius: 0 0 14px 14px; /* Las esquinas de abajo se redondean para encajar con la caja */
+                margin: 0;
+            }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 1rem;
+            border-top: 1px solid #1F2937;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            background-color: #111111;
+        }
+
+        .footer-credits {
+            margin: 1rem 0;
+            color: #9CA3AF;
+            line-height: 1.8;
+        }
+
+            .footer-credits strong {
+                color: var(--accent);
+                font-size: 1.1rem;
+            }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+            footer a:hover {
+                text-decoration: underline;
+            }
+    </style>
+</head>
+<body>
+
+    <!-- Navegación -->
+    <header>
+        <a href="#" class="logo">
+            Grand Gym 3000
+        </a>
+        <nav>
+            <a href="#comunidad">Comunidad</a>
+            <a href="#planes">Planes</a>
+            <a href="#app">App gestor</a>
+            <a href="https://www.instagram.com/thegrandgym3000/" target="_blank" class="btn-header">Instagram</a>
+        </nav>
+    </header>
+
+    <!-- Hero / Comunidad -->
+    <section class="hero" id="comunidad">
+        <div class="hero-content">
+            <h1>Grand Gym 3000</h1>
+            <p>La evolución del entrenamiento y el control total. Entrena con la mejor comunidad y lleva el registro de tu progreso con nuestra plataforma.</p>
+        </div>
+    </section>
+
+    <!-- Sección Planes -->
+    <section class="plans-section" id="planes">
+        <div class="section-title">
+            <h2>Nuestros Planes</h2>
+            <p>Elige la membresía que mejor se adapte a ti</p>
+        </div>
+
+        <div class="plans-grid">
+            <!-- Plan Estudiante -->
+            <div class="plan-card">
+                <div>
+                    <h3>Estudiante</h3>
+                    <div class="price">$15 <span>/mes</span></div>
+                    <ul class="features">
+                        <li>Acceso ilimitado al gym</li>
+                        <li>Horarios flexibles</li>
+                    </ul>
+                </div>
+                <a href="#" class="btn-plan">Inscribirme</a>
+            </div>
+
+            <!-- Plan Dama -->
+            <div class="plan-card">
+                <div>
+                    <h3>Dama</h3>
+                    <div class="price">$20 <span>/mes</span></div>
+                    <ul class="features">
+                        <li>Acceso completo a instalaciones</li>
+                        <li>Evaluación física inicial</li>
+                    </ul>
+                </div>
+                <a href="#" class="btn-plan">Inscribirme</a>
+            </div>
+
+            <!-- Plan Caballero -->
+            <div class="plan-card">
+                <div>
+                    <h3>Caballero</h3>
+                    <div class="price">$25 <span>/mes</span></div>
+                    <ul class="features">
+                        <li>Acceso a todas las zonas</li>
+                        <li>Asesoría de rutina base</li>
+                    </ul>
+                </div>
+                <a href="#" class="btn-plan">Inscribirme</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección App Gestor / Paneles de Control -->
+    <section class="app-section" id="app">
+        <div class="section-title">
+            <h2>Grand Gym Gestor</h2>
+            <p>Gestiona las membresías, más fácil que nunca.</p>
+        </div>
+
+        <div class="mockup-container">
+            <!-- Espacio 1: Ajustado -->
+            <div class="mockup-item toma-completa">
+                <span class="mockup-tag">Toma 1: Panel de clientes</span>
+                <p><img src="Dashboard clientes.png" alt="Dashboard Clientes"></p>
+            </div>
+
+            <!-- Espacio 2: Ajustado -->
+            <div class="mockup-item toma-completa">
+                <span class="mockup-tag">Toma 2: Panel de pagos</span>
+                <p><img src="Dashboard pagos.png" alt="Dashboard Pagos"></p>
+            </div>
+
+            <!-- Espacio 3: Intacto como ordenó el director -->
+            <div class="mockup-item">
+                <span class="mockup-tag">Toma 3: Información del cliente</span>
+                <p><img src="clientes info.png" alt="Información Cliente"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Grand Gym 3000. Todos los derechos reservados.</p>
+        <p class="footer-credits">
+            Desarrollado por <strong>DevNetWorkings</strong><br>
+            (William Mosquera C.I: 30.830.476, Franco Hernández C.I: 33.241.224, Jurgen Zambrano C.I: 31.757.064)
+        </p>
+        <p>Síguenos en Instagram: <a href="https://www.instagram.com/thegrandgym3000/" target="_blank">@thegrandgym3000</a></p>
+    </footer>
+
+</body>
+</html>
