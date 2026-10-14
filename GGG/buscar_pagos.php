@@ -1,4 +1,5 @@
 <?php
+
 // Archivo: buscar_pagos.php
 ob_start();
 session_start();
@@ -24,7 +25,14 @@ $sql = "SELECT p.id, p.reference, p.monto, p.coin, p.fecha,
 $params = [];
 
 if (!empty($query)) {
-    $sql .= " AND (p.reference LIKE :q OR c.ci LIKE :q OR c.nombres LIKE :q)";
+    // Buscamos en todas las columnas relevantes de la tabla
+    $sql .= " AND (p.reference LIKE :q 
+                OR c.ci LIKE :q 
+                OR c.nombres LIKE :q 
+                OR c.apellidos LIKE :q 
+                OR p.monto LIKE :q 
+                OR p.coin LIKE :q 
+                OR o.username LIKE :q)";
     $params['q'] = '%' . $query . '%';
 }
 

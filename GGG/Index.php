@@ -1,12 +1,7 @@
 <?php
-// Sistema de Control Estricto
+
 session_start();
 
-// Si alguien entra a esta URL o presiona F5, quemamos sus credenciales inmediatamente.
-session_unset();
-session_destroy();
-
-// El set siempre amanece cerrado bajo llave. Cero auto-logins.
 $display_login = 'flex';
 $display_dashboard = 'none';
 ?>
@@ -76,7 +71,7 @@ $display_dashboard = 'none';
     <div id="dashboard" style="display: <?php echo $display_dashboard; ?>;">
         <div id="header">
             <p><span id="nombre-actor" style="color: #72C9FF;"></span></p>
-            <button onclick="window.location.href='logout.php'">Logout</button>
+            <a href="#" onclick="cerrarSesionEscenario()" class="tu-clase-css">Logout</a>
         </div>
         
         <nav class="tabs-navigation">
