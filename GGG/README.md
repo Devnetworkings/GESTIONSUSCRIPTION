@@ -34,7 +34,7 @@ Aplicación web en PHP y MySQL para administrar clientes de un gimnasio, membres
 - Tasa BCV, Fecha Valor y precio base en USD guardados en cada nuevo pago en bolívares.
 - Renovación automática de la fecha de vencimiento al guardar un pago.
 - Gestión administrativa de planes, operadores, roles, cuentas activas y plazo de aviso.
-- Resumen de ingresos consultable por período y exportable a un libro Excel `.xls` con pestañas de resumen, pagos individuales y totales diarios.
+- Resumen de ingresos consultable por período y exportable a un libro Excel `.xlsx` con columnas ajustadas, resumen, cada pago y sus datos de cliente/operador, totales diarios y balance bruto por moneda con gráficos.
 - Preferencia de tema claro/oscuro guardada por operador en el navegador.
 
 ## Documentación

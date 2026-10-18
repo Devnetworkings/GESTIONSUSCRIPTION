@@ -67,15 +67,16 @@ Para que la verificación y recuperación de correo funcionen, PHP debe poder en
 
 En **Configuración → Resumen de ingresos**, selecciona las fechas **Desde** y **Hasta**. **Consultar** muestra los totales agrupados por moneda, método de pago y operador. Los importes de monedas diferentes se presentan por separado; no se convierten ni se suman entre monedas.
 
-**Exportar Excel** descarga un archivo `.xls` compatible con Excel para el mismo período, con estas hojas:
+**Exportar pagos y balance (Excel)** descarga un libro `.xlsx` para el mismo período, con columnas dimensionadas para facilitar la lectura, filtros en las tablas y estas hojas:
 
 | Hoja | Contenido |
 | --- | --- |
+| Pagos | Primera hoja al abrir el archivo: una fila por transacción con fecha y hora, datos del cliente (nombre, cédula, teléfono y correo), referencia, plan, monto, moneda, tasa BCV y operador. |
 | Resumen | Cantidad e ingresos agrupados por moneda, método de pago y operador. |
-| Pagos | Detalle de cada pago: cliente, cédula, referencia, plan, monto, moneda, método y operador. |
 | Totales diarios | Cantidad e ingresos agrupados por fecha y moneda. |
+| Balance | Cantidad de pagos, total y promedio por moneda, gráficos de ingresos diarios separados por moneda y composición de pagos por cantidad. |
 
-El reporte financiero y la descarga requieren una sesión activa de administrador. La hoja de pagos exportados incluye el monto cobrado, precio del plan en USD, tasa y Fecha Valor BCV cuando existan. Los pagos históricos se conservan en su moneda y monto originales, sin convertirlos retroactivamente.
+El reporte financiero y la descarga requieren una sesión activa de administrador. El balance refleja ingresos brutos: no descuenta gastos, porque el sistema no registra egresos. Los totales de USD y VES se presentan por separado y no se suman entre sí. La hoja de pagos exportados incluye el monto cobrado, precio del plan en USD, tasa y Fecha Valor BCV cuando existan. Los pagos históricos se conservan en su moneda y monto originales, sin convertirlos retroactivamente.
 
 ## Apariencia y preferencias
 
