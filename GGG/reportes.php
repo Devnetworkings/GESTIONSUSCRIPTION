@@ -75,6 +75,9 @@ function xlsxAdjustedWidths(array $rows, array $minimumWidths): array
     $widths = $minimumWidths;
     foreach ($rows as $cells) {
         foreach ($cells as $columnIndex => $cell) {
+            if (is_array($cell) && array_key_exists('fitWidth', $cell) && !$cell['fitWidth']) {
+                continue;
+            }
             $value = is_array($cell) ? ($cell['value'] ?? '') : $cell;
             if (!is_scalar($value) || (string) $value === '') {
                 continue;
@@ -137,7 +140,14 @@ function xlsxChartTitle(string $title): string
         . '<a:endParaRPr lang="es-VE"/></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>';
 }
 
-function xlsxBarChartXml(string $title, string $categoryRange, string $valueRange, string $color, int $axisId): string
+function xlsxBarChartXml(
+    string $title,
+    string $categoryRange,
+    string $valueRange,
+    string $color,
+    int $axisId,
+    int $labelSkip
+): string
 {
     $formulaCategories = xlsxEscape("'Balance'!" . $categoryRange);
     $formulaValues = xlsxEscape("'Balance'!" . $valueRange);
@@ -151,16 +161,17 @@ function xlsxBarChartXml(string $title, string $categoryRange, string $valueRang
         . '<a:ln><a:solidFill><a:srgbClr val="' . $color . '"/></a:solidFill></a:ln></c:spPr>'
         . '<c:cat><c:strRef><c:f>' . $formulaCategories . '</c:f></c:strRef></c:cat>'
         . '<c:val><c:numRef><c:f>' . $formulaValues . '</c:f></c:numRef></c:val>'
-        . '</c:ser><c:dLbls><c:showVal val="1"/></c:dLbls><c:gapWidth val="60"/>'
+        . '</c:ser><c:gapWidth val="60"/>'
         . '<c:axId val="' . $axisId . '"/><c:axId val="' . ($axisId + 1) . '"/></c:barChart>'
         . '<c:catAx><c:axId val="' . $axisId . '"/><c:scaling><c:orientation val="minMax"/></c:scaling>'
         . '<c:delete val="0"/><c:axPos val="b"/><c:tickLblPos val="nextTo"/><c:crossAx val="' . ($axisId + 1)
-        . '"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/></c:catAx>'
+        . '"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/>'
+        . '<c:tickLblSkip val="' . $labelSkip . '"/><c:tickMarkSkip val="' . $labelSkip . '"/></c:catAx>'
         . '<c:valAx><c:axId val="' . ($axisId + 1) . '"/><c:scaling><c:orientation val="minMax"/></c:scaling>'
         . '<c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/><c:numFmt formatCode="#,##0.00" sourceLinked="0"/>'
         . '<c:tickLblPos val="nextTo"/><c:crossAx val="' . $axisId . '"/><c:crosses val="autoZero"/>'
-        . '<c:crossBetween val="between"/></c:valAx></c:plotArea><c:legend><c:legendPos val="b"/>'
-        . '<c:layout/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart>'
+        . '<c:crossBetween val="between"/></c:valAx></c:plotArea><c:plotVisOnly val="1"/>'
+        . '<c:dispBlanksAs val="gap"/></c:chart>'
         . '<c:printSettings><c:headerFooter/><c:pageMargins l="0.25" r="0.25" t="0.5" b="0.5"'
         . ' header="0.2" footer="0.2"/><c:pageSetup/></c:printSettings></c:chartSpace>';
 }
@@ -194,9 +205,10 @@ function xlsxDrawingXml(array $charts): string
     foreach ($charts as $index => $chart) {
         $column = $chart['column'];
         $row = $chart['row'];
+        $lastColumn = $chart['lastColumn'] ?? ($column + 8);
         $xml .= '<xdr:twoCellAnchor><xdr:from><xdr:col>' . $column . '</xdr:col><xdr:colOff>0</xdr:colOff>'
             . '<xdr:row>' . $row . '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to>'
-            . '<xdr:col>' . ($column + 8) . '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' . ($row + 16)
+            . '<xdr:col>' . $lastColumn . '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' . ($row + 16)
             . '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro="">'
             . '<xdr:nvGraphicFramePr><xdr:cNvPr id="' . ($index + 2) . '" name="Chart ' . ($index + 1)
             . '"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/>'
@@ -345,7 +357,10 @@ try {
     $filasBalance = [
         ['Balance de ingresos brutos'],
         ['Período', $desde . ' a ' . $hasta],
-        ['Los importes de monedas diferentes se presentan por separado; no se suman ni se descuentan gastos.'],
+        [[
+            'value' => 'Los importes de monedas diferentes se presentan por separado; no se suman ni se descuentan gastos.',
+            'fitWidth' => false
+        ]],
         [],
         [
             ['value' => 'Moneda', 'style' => 1],
@@ -389,7 +404,8 @@ try {
     $filasBalance[] = [];
     $filasBalance[] = ['Ingresos diarios por moneda'];
     $filasBalance[] = [];
-    $filasBalance = array_pad($filasBalance, 48, []);
+    $chartDataStartRow = 70;
+    $filasBalance = array_pad($filasBalance, $chartDataStartRow - 1, []);
     $filasBalance[] = [
         'Fecha VES', ['value' => 'Ingresos VES', 'type' => 'String', 'style' => 1], '',
         'Fecha USD', ['value' => 'Ingresos USD', 'type' => 'String', 'style' => 1], '',
@@ -420,25 +436,31 @@ try {
     $charts = [];
     $chartFiles = [];
     $chartRelationships = [];
+    $nextChartRow = 11;
+    $labelSkip = max(1, (int) ceil($dailyChartRows / 8));
     if ($dailyChartRows > 0 && in_array('VES', $chartCoins, true)) {
         $chartFiles['xl/charts/chart' . (count($charts) + 1) . '.xml'] = xlsxBarChartXml(
             'Ingresos diarios en VES',
-            '$A$50:$A$' . (49 + $dailyChartRows),
-            '$B$50:$B$' . (49 + $dailyChartRows),
+            '$A$' . $chartDataStartRow . ':$A$' . ($chartDataStartRow + $dailyChartRows),
+            '$B$' . $chartDataStartRow . ':$B$' . ($chartDataStartRow + $dailyChartRows),
             '4472C4',
-            100000
+            100000,
+            $labelSkip
         );
-        $charts[] = ['column' => 0, 'row' => 11];
+        $charts[] = ['column' => 0, 'lastColumn' => 10, 'row' => $nextChartRow];
+        $nextChartRow += 18;
     }
     if ($dailyChartRows > 0 && in_array('USD', $chartCoins, true)) {
         $chartFiles['xl/charts/chart' . (count($charts) + 1) . '.xml'] = xlsxBarChartXml(
             'Ingresos diarios en USD',
-            '$D$50:$D$' . (49 + $dailyChartRows),
-            '$E$50:$E$' . (49 + $dailyChartRows),
+            '$D$' . $chartDataStartRow . ':$D$' . ($chartDataStartRow + $dailyChartRows),
+            '$E$' . $chartDataStartRow . ':$E$' . ($chartDataStartRow + $dailyChartRows),
             '70AD47',
-            200000
+            200000,
+            $labelSkip
         );
-        $charts[] = ['column' => 8, 'row' => 11];
+        $charts[] = ['column' => 0, 'lastColumn' => 10, 'row' => $nextChartRow];
+        $nextChartRow += 18;
     }
     if (count($balances) > 1) {
         $firstBalanceRow = 6;
@@ -447,7 +469,7 @@ try {
             '$A$' . $firstBalanceRow . ':$A$' . $lastBalanceRow,
             '$B$' . $firstBalanceRow . ':$B$' . $lastBalanceRow
         );
-        $charts[] = ['column' => 0, 'row' => 29];
+        $charts[] = ['column' => 0, 'lastColumn' => 8, 'row' => $nextChartRow];
     }
 
     $styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'

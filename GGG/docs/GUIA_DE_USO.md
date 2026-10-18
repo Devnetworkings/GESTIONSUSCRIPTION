@@ -76,6 +76,8 @@ En **Configuración → Resumen de ingresos**, selecciona las fechas **Desde** y
 | Totales diarios | Cantidad e ingresos agrupados por fecha y moneda. |
 | Balance | Cantidad de pagos, total y promedio por moneda, gráficos de ingresos diarios separados por moneda y composición de pagos por cantidad. |
 
+Los gráficos diarios aparecen apilados y con el mismo ancho para facilitar la comparación; se eliminan leyendas y valores repetidos, y las etiquetas de fecha se espacian según el período para evitar que se encimen.
+
 El reporte financiero y la descarga requieren una sesión activa de administrador. El balance refleja ingresos brutos: no descuenta gastos, porque el sistema no registra egresos. Los totales de USD y VES se presentan por separado y no se suman entre sí. La hoja de pagos exportados incluye el monto cobrado, precio del plan en USD, tasa y Fecha Valor BCV cuando existan. Los pagos históricos se conservan en su moneda y monto originales, sin convertirlos retroactivamente.
 
 ## Apariencia y preferencias
