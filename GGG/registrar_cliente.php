@@ -1,32 +1,49 @@
 <?php
-// Archivo: registrar_cliente.php (Actualizado con POO)
+session_start();
 header('Content-Type: application/json');
+require 'conexion.php';
+require 'Cliente.php';
+require 'validaciones.php';
+require 'auth_guard.php';
+requireActiveOperator($pdo);
+
+$ci = normalizarCedula($_POST['ci'] ?? '');
+$nombres = trim($_POST['nombres'] ?? '');
+$apellidos = trim($_POST['apellidos'] ?? '');
+$tlf = normalizarTelefono($_POST['tlf'] ?? '');
+$email = trim($_POST['email'] ?? '');
+$direccion = trim($_POST['direccion'] ?? '');
+
+if ($ci === false) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'La cédula debe tener de 6 a 9 dígitos (ejemplo: 30830476).']);
+    exit;
+}
+if ($nombres === '' || strlen($nombres) > 50 || strlen($apellidos) > 50) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio y nombres/apellidos no pueden exceder 50 caracteres.']);
+    exit;
+}
+if ($tlf === false) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'El teléfono debe tener formato 04xx-xxxxxxx (ejemplo: 0412-1234567).']);
+    exit;
+}
+if ($email !== '' && !emailValido($email)) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'El correo debe tener un formato válido y no exceder 254 caracteres.']);
+    exit;
+}
 
 try {
-    require 'conexion.php'; // Tu conexión PDO que ya funciona perfecto[cite: 5]
-    require 'Cliente.php';  // Llamamos al camerino de nuestra clase
-
-    // Captura de datos[cite: 2]
-    $ci = $_POST['ci'] ?? '';
-    $nombres = $_POST['nombres'] ?? '';
-    $apellidos = $_POST['apellidos'] ?? '';
-    $tlf = $_POST['tlf'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $direccion = $_POST['direccion'] ?? '';
-
-    if (empty($ci) || empty($nombres)) {
-        throw new Exception("Faltan datos obligatorios."); // Mantenemos tu lógica de error[cite: 2]
-    }
-
-    // ¡Aquí ocurre la magia de la POO! Instanciamos el objeto.
     $nuevoCliente = new Cliente($ci, $nombres, $apellidos, $tlf, $email, $direccion);
-
-    // Le pedimos al objeto que se guarde a sí mismo
     $nuevoCliente->guardar($pdo);
-
-    echo json_encode(['success' => true]); // Retornamos éxito como antes[cite: 2]
-
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]); // Retornamos error[cite: 2]
+    echo json_encode(['success' => true]);
+} catch (PDOException $e) {
+    http_response_code($e->getCode() === '23000' ? 409 : 500);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getCode() === '23000' ? 'Ya existe un cliente con esa cédula.' : 'No se pudo registrar el cliente.'
+    ]);
 }
 ?>

@@ -2,42 +2,76 @@
 
 session_start();
 
-$display_login = 'flex';
+$display_login = 'grid';
 $display_dashboard = 'none';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>GESTIÓN LOGIN</title>
-    <link rel="stylesheet" href="app.css" />
+    <title>Sistema de gestión</title>
+    <link rel="stylesheet" href="app.css?v=20261018-monthlyplans2" />
 </head>
 <body>
 
   <div id="loginpage" style="display: <?php echo $display_login; ?>;">
-        
-        <form id="formu" method="POST" onsubmit="procesarFormulario(event, 'auth.php', (res) => { 
-            document.getElementById('loginpage').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            document.getElementById('nombre-actor').innerText = res.operador.toUpperCase();
-            cargarVista('clientes'); 
-        })">
-            <h3>INICIAR SESIÓN</h3>
-            <input type="text" placeholder="OPERADOR" name="operator" required>
-            <input type="password" placeholder="PASSWORD" name="password" required>
-            <input type="submit" id="send" value="Enviar"/> 
-            <div id="create-recovery"> 
-                <input type="button" value="C:O" onclick="toggleLogin('register')" />
-                <input type="button" value="R:O" />
-            </div>
-        </form>
+        <section class="login-brand">
+            <img class="gym-logo login-gym-logo" src="assets/gym-logo.jpg" alt="Logo del gimnasio">
+            <p class="brand-caption">Sistema de gestión</p>
+        </section>
+        <div class="login-forms">
+    <form id="formu" method="POST" onsubmit="procesarFormulario(event, 'auth.php', (res) => { 
+    sessionStorage.setItem('actorVIP', res.operador);
+    establecerTemaUsuario(res.operador);
+    document.getElementById('dashboard-header-actions').appendChild(document.getElementById('theme-toggle'));
+    document.getElementById('loginpage').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('nombre-actor').innerText = res.operador.toUpperCase();
+    const botonConfig = Array.from(document.querySelectorAll('.tabs-navigation button')).find(button => button.textContent.includes('Configuración'));
+    if (botonConfig) botonConfig.style.display = res.role === 'admin' ? '' : 'none';
+    cargarVista('clientes'); 
+})">
+    <div class="login-card-heading">
+        <p class="login-eyebrow">ACCESO DE OPERADORES</p>
+    <h3>Iniciar sesión</h3>
+        <p class="login-subtitle">Ingresa con tu usuario y contraseña.</p>
+    </div>
+    <label class="login-field">Usuario
+    <input type="text" placeholder="OPERADOR" name="operator" required>
+    </label>
+    <label class="login-field">Contraseña
+    <input type="password" placeholder="PASSWORD" name="password" required>
+    </label>
+    <input type="submit" id="send" value="Iniciar sesión"/> 
+    <div id="create-recovery"> 
+            <input type="button" value="Registrar operador" onclick="toggleLogin('register')" />
+            <input type="button" value="Olvidé mi contraseña" onclick="toggleLogin('recovery')" />
+    </div>
+</form>
+
+            <form id="form-recovery" style="display: none;" onsubmit="solicitarRecuperacion(event)">
+                <div class="login-card-heading">
+                    <p class="login-eyebrow">ACCESO SEGURO</p>
+                <h3>RECUPERAR CONTRASEÑA</h3>
+                    <p class="login-subtitle">Te enviaremos instrucciones a tu correo verificado.</p>
+                </div>
+                <label class="login-field">Usuario
+                <input type="text" name="username" placeholder="Usuario del operador" required>
+                </label>
+                <input type="submit" value="Enviar enlace">
+                <button type="button" class="btn-volver" onclick="toggleLogin('login')">Volver</button>
+            </form>
 
         <form id="form-register" style="display: none;" onsubmit="procesarFormulario(event, 'register.php', (res) => { 
-            alert('¡Operador registrado con éxito! Bienvenido al equipo de The Grand Gym 3000.'); 
+            alert('Operador registrado con éxito.');
             toggleLogin('login'); 
             document.getElementById('form-register').reset(); 
         })">
+            <div class="login-card-heading">
+                <p class="login-eyebrow">GESTIÓN DE EQUIPO</p>
             <h3>NUEVO OPERADOR</h3>
+                <p class="login-subtitle">Crea un acceso para un nuevo integrante.</p>
+            </div>
             
             <div class="register-grid">
                 <input type="text" name="nombres" placeholder="Nombres" required>
@@ -48,31 +82,52 @@ $display_dashboard = 'none';
                         <option value="V">V</option>
                         <option value="E">E</option>
                     </select>
-                    <input type="number" name="ci" placeholder="Cédula" required style="width: 70%;">
+                    <input type="text" inputmode="numeric" name="ci" placeholder="Cédula" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required style="width: 70%;">
                 </div>
                 
-                <input type="number" name="tlf" placeholder="Teléfono (Ej: 04141234567)" required>
+                <input type="tel" name="tlf" placeholder="Teléfono, ej. 0412-1234567" pattern="04[0-9]{2}-?[0-9]{7}" maxlength="12" required>
                 
-                <input type="text" name="contacto" placeholder="Corre Electrónico" style="grid-column: span 2;">
+                <input type="email" name="contacto" maxlength="254" placeholder="Correo electrónico" style="grid-column: span 2;" required>
                 <input type="text" name="direccion" placeholder="Dirección de Habitación" style="grid-column: span 2;">
 
                 <hr class="divider" style="grid-column: span 2;">
 
                 <input type="text" name="username" placeholder="Usuario para el Sistema" required>
-                <input type="password" name="pw" placeholder="Contraseña Segura" required>
+                <input type="password" name="pw" placeholder="Contraseña (10 a 72 caracteres)" minlength="10" maxlength="72" required>
             </div>
 
             <input type="submit" id="send-register" value="Registrar Operador">
             <button type="button" class="btn-volver" onclick="toggleLogin('login')">Volver a la Taquilla</button>
         </form>
 
+        </div>
     </div>
 
     <div id="dashboard" style="display: <?php echo $display_dashboard; ?>;">
         <div id="header">
-            <p><span id="nombre-actor" style="color: #72C9FF;"></span></p>
-            <a href="#" onclick="cerrarSesionEscenario()" class="tu-clase-css">Logout</a>
+            <div class="dashboard-brand">
+                <img class="gym-logo dashboard-gym-logo" src="assets/gym-logo.jpg" alt="Logo del gimnasio">
+                <span class="dashboard-brand-name">Sistema de gestión</span>
+            </div>
+            <div class="header-actions" id="dashboard-header-actions">
+                <span class="operator-label">OPERADOR</span>
+                <span id="nombre-actor"></span>
+                <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Cambiar a modo oscuro" aria-pressed="false">
+                    <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+                    <span class="theme-toggle-text">Modo oscuro</span>
+                </button>
+                <a href="#" onclick="cerrarSesionEscenario()" class="logout-link">Cerrar sesión</a>
+            </div>
         </div>
+
+        <section id="panel-resumen" class="dashboard-summary" aria-live="polite">
+            <article><strong id="resumen-activos">—</strong><span> Activas</span></article>
+            <article><strong id="resumen-por-vencer">—</strong><span> Por vencer</span></article>
+            <article><strong id="resumen-vencidos">—</strong><span> Membresías vencidas</span></article>
+            <article><strong id="resumen-inactivos">—</strong><span> Inactivas</span></article>
+            <article><strong id="resumen-deuda">—</strong><span> Con deuda</span></article>
+            <p id="resumen-error" class="summary-error" role="status" hidden></p>
+        </section>
         
         <nav class="tabs-navigation">
             <button class="tab-btn" onclick="cargarVista('clientes')">Clientes</button>
@@ -97,6 +152,8 @@ $display_dashboard = 'none';
                     style="padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
                 <option value="">Todos los estatus</option>
                 <option value="Activo">Activos</option>
+                <option value="Por vencer">Por vencer</option>
+                <option value="Vencido">Vencidos</option>
                 <option value="Inactivo">Inactivos</option>
                 <option value="Deuda">Deuda</option>
             </select>
@@ -119,6 +176,7 @@ $display_dashboard = 'none';
                 <tbody>
                     </tbody>
             </table>
+            <div id="paginacion-clientes" class="pagination-controls"></div>
         </div>
 
         <form id="form-cliente" class="modo-lateral" style="display:none;" onsubmit="procesarFormulario(event, 'registrar_cliente.php', (res) => { 
@@ -129,17 +187,17 @@ $display_dashboard = 'none';
             <h3>Registro Rápido</h3>
             
             <div class="input-group full-width">
-                <input type="text" name="ci" placeholder="Cédula / Identificación" required />
+                <input type="text" name="ci" placeholder="Cédula, ej. 30830476" pattern="[VEJGPvejgp]?-?[0-9]{6,9}" maxlength="11" title="6 a 9 dígitos, con prefijo opcional" required />
             </div>
             <div class="input-group-row">
                 <input type="text" name="nombres" placeholder="Nombres" required />
                 <input type="text" name="apellidos" placeholder="Apellidos" required />
             </div>
             <div class="input-group full-width">
-                <input type="text" name="tlf" placeholder="Teléfono" required />
+                <input type="tel" name="tlf" placeholder="Teléfono, ej. 0412-1234567" pattern="04[0-9]{2}-?[0-9]{7}" maxlength="12" title="Formato 04xx-xxxxxxx" required />
             </div>
             <div class="input-group full-width">
-                <input type="email" name="email" placeholder="Correo Electrónico" />
+                <input type="email" name="email" maxlength="254" placeholder="Correo Electrónico (opcional)" />
             </div>
             <div class="input-group full-width">
                 <input type="text" name="direccion" placeholder="Dirección" />
@@ -160,7 +218,14 @@ $display_dashboard = 'none';
             <input type="text" id="input-busqueda-pagos" placeholder="🔍 Buscar ref, cédula o nombre..." 
                    onkeyup="cargarTablaPagos()" 
                    style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 250px;">
-            
+            <input type="date" id="filtro-pago-desde" onchange="cargarTablaPagos()" aria-label="Desde">
+            <input type="date" id="filtro-pago-hasta" onchange="cargarTablaPagos()" aria-label="Hasta">
+            <select id="filtro-pago-metodo" onchange="cargarTablaPagos()">
+                <option value="">Todos los métodos</option>
+                <option value="pagomovil">Pago móvil</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="divisa">Divisa</option>
+            </select>
             <button class="btn-nuevo" id="btn-nuevo-pago" onclick="toggleFormularioPago()">+ Nuevo Pago</button>
         </div>
     </div>
@@ -175,12 +240,15 @@ $display_dashboard = 'none';
                         <th>Referencia / Serie</th>
                         <th>Monto</th>
                         <th>Moneda</th>
+                        <th>Tasa BCV</th>
+                        <th>Método</th>
                         <th>Operador</th>
                     </tr>
                 </thead>
                 <tbody>
                     </tbody>
             </table>
+            <div id="paginacion-pagos-lista" class="pagination-controls"></div>
         </div>
 
         <div id="addpay" class="modo-lateral" style="display:none;">
@@ -203,9 +271,11 @@ $display_dashboard = 'none';
                     <select name="tipo_documento" required>
                         <option value="V">V</option>
                         <option value="E">E</option>
+                        <option value="J">J</option>
+                        <option value="G">G</option>
                         <option value="P">P</option>
                     </select>
-                    <input type="number" name="cedula_identidad" placeholder="Cédula de identidad" required />
+                    <input type="text" inputmode="numeric" name="cedula_identidad" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required />
                 </div>
 
                 <div class="input-group-row">
@@ -218,11 +288,8 @@ $display_dashboard = 'none';
                             <option value="0416">0416</option>
                             <option value="0426">0426</option>
                         </optgroup>
-                        <optgroup label="Líneas Fijas">
-                            <option value="0212">0212</option>
-                        </optgroup>
                     </select>
-                    <input type="number" name="telefono" placeholder="Número de Teléfono" required />
+                    <input type="text" inputmode="numeric" name="telefono" placeholder="7 dígitos" pattern="[0-9]{7}" minlength="7" maxlength="7" required />
                 </div>
                 
                 <div class="input-group">
@@ -235,8 +302,15 @@ $display_dashboard = 'none';
                 </div>
 
                 <div class="input-group">
-                    <input type="number" name="monto" placeholder="Monto... $" step="0.01" required />
+                    <select name="id_plan" id="pago-plan" required>
+                        <option value="">Cargando planes…</option>
+                    </select>
                 </div>
+
+                <div class="input-group">
+                    <output id="pago-monto-mostrado" class="payment-amount">Selecciona un plan</output>
+                </div>
+                <p id="tasa-bcv-pago" class="full-width" role="status"></p>
 
                 <div class="input-group full-width" id="contenedor-dinamico" style="display: none;">
                     <input type="text" id="input-dinamico" name="reference" placeholder="" />
@@ -247,6 +321,74 @@ $display_dashboard = 'none';
         </div>
     </div>
 </div>
+</div>
+
+<div id="vista-config" style="display:none; flex-direction:column; gap:20px; padding:20px;">
+    <section class="config-card">
+        <h2>Planes de membresía</h2>
+        <form id="form-plan" onsubmit="guardarPlan(event)">
+            <label>Nombre
+                <input type="text" name="nombre" maxlength="80" placeholder="Nombre del plan" required>
+            </label>
+            <label>Precio (USD)
+                <input type="number" name="precio" min="0.01" step="0.01" placeholder="Precio en USD" required>
+            </label>
+            <button type="submit" class="btn-nuevo">Añadir plan</button>
+        </form>
+        <div id="lista-planes"></div>
+        <p>Todos los planes duran un mes y sus precios se definen en USD. Los pagos en bolívares se convierten con la tasa USD del BCV vigente al registrar el pago. Los planes quitados se desactivan para preservar el historial.</p>
+    </section>
+    <section class="config-card">
+        <h2>Tasa de cambio BCV</h2>
+        <p id="tasa-bcv-admin" role="status">Consultando tasa oficial…</p>
+        <a href="https://www.bcv.org.ve/" target="_blank" rel="noopener noreferrer">Ver tasa publicada por el BCV</a>
+        <form id="form-tasa-manual" onsubmit="guardarTasaManual(event)" hidden>
+            <label>Tasa manual (Bs por USD)
+                <input type="number" name="tasa_bcv" min="0.00000001" step="0.00000001" required>
+            </label>
+            <button type="submit" class="btn-nuevo">Guardar tasa manual</button>
+        </form>
+        <p>Si no se puede consultar al BCV, solo se reutiliza una consulta exitosa del mismo día. Si no existe, un administrador puede ingresar una tasa manual; la próxima consulta exitosa la reemplaza.</p>
+    </section>
+    <section class="config-card">
+        <h2>Vencimientos y operadores</h2>
+        <form id="form-aviso" onsubmit="guardarAviso(event)">
+            <label>Días de anticipación para avisar
+                <input type="number" name="dias_aviso" min="0" max="90" required>
+            </label>
+            <button type="submit" class="btn-nuevo">Guardar aviso</button>
+        </form>
+        <div id="lista-operadores"></div>
+    </section>
+    <section class="config-card">
+        <h2>Resumen de ingresos</h2>
+        <form id="form-reporte" onsubmit="cargarReporte(event)">
+            <label>Desde <input type="date" name="desde" required></label>
+            <label>Hasta <input type="date" name="hasta" required></label>
+            <button type="submit" class="btn-nuevo">Consultar</button>
+            <button type="button" class="btn-nuevo" onclick="exportarReporteExcel()">Exportar Excel</button>
+        </form>
+        <div id="resultado-reporte"></div>
+    </section>
+    <section class="config-card">
+        <h2>Registrar operador</h2>
+        <form id="form-nuevo-operador" onsubmit="registrarOperador(event)">
+            <input type="text" name="nombres" placeholder="Nombres" required>
+            <input type="text" name="apellidos" placeholder="Apellidos" required>
+            <select name="tipo_doc"><option value="V">V</option><option value="E">E</option></select>
+            <input type="text" inputmode="numeric" name="ci" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required>
+            <input type="tel" name="tlf" placeholder="Teléfono, ej. 0412-1234567" pattern="04[0-9]{2}-?[0-9]{7}" maxlength="12" required>
+            <input type="email" name="contacto" maxlength="254" placeholder="Correo de recuperación" required>
+            <input type="text" name="direccion" placeholder="Dirección">
+            <input type="text" name="username" placeholder="Usuario" required>
+            <input type="password" name="pw" placeholder="Contraseña (10 a 72 caracteres)" minlength="10" maxlength="72" required>
+            <select name="operator_role">
+                <option value="operador">Rol: operador</option>
+                <option value="admin">Rol: administrador</option>
+            </select>
+            <button type="submit" class="btn-nuevo">Crear operador</button>
+        </form>
+    </section>
 </div>
     </div>
     
@@ -275,6 +417,24 @@ $display_dashboard = 'none';
                 <p style="margin: 0; grid-column: 1 / -1;"><strong>Dirección:</strong> <span id="perfil-direccion" style="color: #475569;"></span></p>
             </div>
 
+            <form id="form-editar-cliente" class="config-card" style="display:none;" onsubmit="guardarEdicionCliente(event)">
+                <input type="hidden" name="id">
+                    <input type="text" name="ci" placeholder="Cédula" pattern="[VEJGPvejgp]?-?[0-9]{6,9}" maxlength="11" required>
+                <input type="text" name="nombres" placeholder="Nombres" required>
+                <input type="text" name="apellidos" placeholder="Apellidos">
+                <input type="tel" name="tlf" placeholder="Teléfono 04xx-xxxxxxx" pattern="04[0-9]{2}-?[0-9]{7}" maxlength="12" required>
+                <input type="email" name="email" maxlength="254" placeholder="Correo (opcional)">
+                <input type="text" name="direccion" placeholder="Dirección">
+                <label>Vencimiento <input type="date" name="fecha_vencimiento"></label>
+                <select name="estatus" required>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                    <option value="Deuda">Deuda</option>
+                </select>
+                <button type="submit" class="btn-nuevo">Guardar cambios</button>
+            </form>
+            <button id="btn-editar-cliente" class="btn-nuevo" type="button" onclick="alternarEdicionCliente()">Editar cliente</button>
+
             <!-- Tabla de Pagos -->
             <h3 style="color: #1e293b; margin-bottom: 15px;">Historial de Transacciones</h3>
             <table class="celtable" id="tabla-perfil-pagos" style="width: 100%; border-collapse: collapse;">
@@ -283,6 +443,8 @@ $display_dashboard = 'none';
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Fecha</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Referencia</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Monto</th>
+                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Tasa BCV</th>
+                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Método</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Operador</th>
                     </tr>
                 </thead>
@@ -294,6 +456,6 @@ $display_dashboard = 'none';
         </div>
     </div>
 
-    <script src="lg.js"></script>
+    <script src="lg.js?v=20261018-veformat3"></script>
 </body>
 </html>

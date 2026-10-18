@@ -4,13 +4,8 @@ ob_start();
 session_start();
 header('Content-Type: application/json');
 require 'conexion.php';
-
-// ¿Hay seguridad en la puerta?
-if (!isset($_SESSION['operador_id'])) {
-    ob_clean();
-    echo json_encode(['success' => false, 'message' => 'Operador no autorizado.']);
-    exit;
-}
+require 'auth_guard.php';
+requireActiveOperator($pdo);
 
 // 1. Capturamos el término de búsqueda de la barra
 $query = $_GET['q'] ?? '';

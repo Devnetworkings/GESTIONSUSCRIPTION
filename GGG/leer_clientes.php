@@ -3,13 +3,8 @@ ob_start();
 session_start();
 header('Content-Type: application/json');
 require 'conexion.php';
-
-// Seguridad en el set
-if (!isset($_SESSION['operador_id'])) {
-    ob_clean();
-    echo json_encode(['success' => false, 'message' => 'Operador no autorizado.']);
-    exit;
-}
+require 'auth_guard.php';
+requireActiveOperator($pdo);
 
 try {
     // 🔍 Extraemos los últimos 10 clientes, ordenados por los más recientes

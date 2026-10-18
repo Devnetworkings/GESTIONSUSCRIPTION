@@ -3,12 +3,25 @@
 ob_start();
 session_start();
 header('Content-Type: application/json');
+require 'conexion.php';
 
 if (isset($_SESSION['operador_id'])) {
-    // Busca cómo guardaste el nombre en auth.php (suele ser 'username', 'operador' o 'nombres')
-    $nombre = isset($_SESSION['username']) ? $_SESSION['username'] : (isset($_SESSION['operador_user']) ? $_SESSION['operador_user'] : 'Operador');
-
-    echo json_encode(['success' => true, 'operador' => $nombre]);
+    $stmt = $pdo->prepare('SELECT username, operator_role, activo FROM operator WHERE id = ? LIMIT 1');
+    $stmt->execute([$_SESSION['operador_id']]);
+    $operator = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$operator || (int) $operator['activo'] !== 1) {
+        $_SESSION = [];
+        session_destroy();
+        echo json_encode(['success' => false]);
+        exit;
+    }
+    $_SESSION['operador_nombre'] = $operator['username'];
+    $_SESSION['operador_role'] = $operator['operator_role'];
+    echo json_encode([
+        'success' => true,
+        'operador' => $_SESSION['operador_nombre'],
+        'role' => $_SESSION['operador_role']
+    ]);
 } else {
     echo json_encode(['success' => false]);
 }

@@ -14,17 +14,19 @@ if (empty($operador) || empty($password_ingresada)) {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, PW, username FROM operator WHERE username = :username LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id, PW, username, operator_role, activo FROM operator WHERE username = :username LIMIT 1");
     $stmt->execute(['username' => $operador]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($usuario && !empty($usuario['PW']) && password_verify($password_ingresada, $usuario['PW'])) {
+    if ($usuario && (int) $usuario['activo'] === 1 && !empty($usuario['PW']) && password_verify($password_ingresada, $usuario['PW'])) {
+        session_regenerate_id(true);
         $_SESSION['operador_logueado'] = true;
         $_SESSION['operador_id'] = $usuario['id'];
         $_SESSION['operador_nombre'] = $usuario['username'];
+        $_SESSION['operador_role'] = $usuario['operator_role'] ?? 'operador';
 
         ob_clean();
-        echo json_encode(['success' => true, 'operador' => $usuario['username']]);
+        echo json_encode(['success' => true, 'operador' => $usuario['username'], 'role' => $_SESSION['operador_role']]);
     } else {
         ob_clean();
         echo json_encode(['success' => false, 'message' => 'Credenciales inválidas.']);

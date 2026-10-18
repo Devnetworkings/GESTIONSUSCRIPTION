@@ -12,8 +12,9 @@ class Operador
     private $tlf;
     private $username;
     private $pw;
+    private $role;
 
-    public function __construct($ci, $nombres, $apellidos, $contacto, $direccion, $tlf, $username, $pw)
+    public function __construct($ci, $nombres, $apellidos, $contacto, $direccion, $tlf, $username, $pw, $role = 'operador')
     {
         $this->ci = $ci;
         $this->nombres = $nombres;
@@ -22,15 +23,16 @@ class Operador
         $this->direccion = $direccion;
         $this->tlf = $tlf;
         $this->username = $username;
-        // Encriptamos la contraseña en camerinos, antes de salir a escena
+        $this->role = $role;
+        // Encriptamos la contraseï¿½a en camerinos, antes de salir a escena
         $this->pw = password_hash($pw, PASSWORD_DEFAULT);
     }
 
     public function guardar($pdo)
     {
-        // ¡Aquí está la magia del UUID() para el nuevo operador!
-        $sql = "INSERT INTO operator (id, ci, nombres, apellidos, contacto, direccion, PW, TLF, username) 
-                VALUES (UUID(), :ci, :nombres, :apellidos, :contacto, :direccion, :pw, :tlf, :username)";
+        // ï¿½Aquï¿½ estï¿½ la magia del UUID() para el nuevo operador!
+        $sql = "INSERT INTO operator (id, ci, nombres, apellidos, contacto, direccion, PW, TLF, username, operator_role) 
+                VALUES (UUID(), :ci, :nombres, :apellidos, :contacto, :direccion, :pw, :tlf, :username, :role)";
 
         $stmt = $pdo->prepare($sql);
         return $stmt->execute([
@@ -41,7 +43,8 @@ class Operador
             'direccion' => $this->direccion,
             'pw' => $this->pw,
             'tlf' => $this->tlf,
-            'username' => $this->username
+            'username' => $this->username,
+            'role' => $this->role
         ]);
     }
 }
