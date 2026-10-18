@@ -46,7 +46,7 @@ function xlsxCellXml($cell, string $reference, bool $header = false): string
     }
     $value = $cell['value'] ?? '';
     $type = $cell['type'] ?? 'String';
-    $style = $header ? 1 : (int) ($cell['style'] ?? 0);
+    $style = $header ? 1 : (int) ($cell['style'] ?? ($type === 'String' ? 6 : 0));
     $styleAttribute = $style === 0 ? '' : ' s="' . $style . '"';
 
     if ($type === 'Number') {
@@ -70,8 +70,32 @@ function xlsxCellXml($cell, string $reference, bool $header = false): string
         . $escaped . '</t></is></c>';
 }
 
+function xlsxAdjustedWidths(array $rows, array $minimumWidths): array
+{
+    $widths = $minimumWidths;
+    foreach ($rows as $cells) {
+        foreach ($cells as $columnIndex => $cell) {
+            $value = is_array($cell) ? ($cell['value'] ?? '') : $cell;
+            if (!is_scalar($value) || (string) $value === '') {
+                continue;
+            }
+            $value = (string) $value;
+            $characterCount = preg_match_all('/./us', $value);
+            if ($characterCount === false) {
+                $characterCount = strlen($value);
+            }
+            $widths[$columnIndex] = min(
+                60,
+                max((float) ($widths[$columnIndex] ?? 10), $characterCount + 2)
+            );
+        }
+    }
+    return $widths;
+}
+
 function xlsxWorksheetXml(array $rows, array $widths, array $options = []): string
 {
+    $widths = xlsxAdjustedWidths($rows, $widths);
     $lastColumn = xlsxColumnName(max(1, count($widths)));
     $lastRow = max(1, count($rows));
     $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -98,11 +122,11 @@ function xlsxWorksheetXml(array $rows, array $widths, array $options = []): stri
     if (!empty($options['autoFilter'])) {
         $xml .= '<autoFilter ref="A1:' . $lastColumn . $lastRow . '"/>';
     }
+    $xml .= '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>';
     if (!empty($options['drawing'])) {
         $xml .= '<drawing r:id="rId1"/>';
     }
-    return $xml . '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>'
-        . '</worksheet>';
+    return $xml . '</worksheet>';
 }
 
 function xlsxChartTitle(string $title): string
@@ -439,13 +463,15 @@ try {
         . '<border><left style="thin"><color rgb="FFD9E2F3"/></left><right style="thin"><color rgb="FFD9E2F3"/></right>'
         . '<top style="thin"><color rgb="FFD9E2F3"/></top><bottom style="thin"><color rgb="FFD9E2F3"/></bottom><diagonal/></border></borders>'
         . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-        . '<cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+        . '<cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
         . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">'
         . '<alignment vertical="center" wrapText="1"/></xf>'
         . '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'
         . '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'
         . '<xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'
         . '<xf numFmtId="167" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'
+        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1">'
+        . '<alignment vertical="top" wrapText="1"/></xf>'
         . '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
 
     $workbookSheets = [
