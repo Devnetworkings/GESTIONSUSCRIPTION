@@ -1,0 +1,3 @@
+# Ignorar sesiones y temporales
+tmp/
+sess_*
