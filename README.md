@@ -12,7 +12,7 @@ Aplicación web en PHP y MySQL para administrar clientes de un gimnasio, membres
 ## Instalación
 
 1. Haz una copia de seguridad de la base de datos antes de actualizar el sistema.
-2. Configura la conexión con `DB_HOST`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`. Si no defines estas variables, se usan los valores locales de Laragon (`127.0.0.1`, base `ggg`, usuario `root` y contraseña vacía). No guardes credenciales en el repositorio.
+2. En producción, configura las variables `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` y `APP_ENV=production` en el panel del hosting. Si el hosting no permite variables de entorno, prepara una configuración local ignorada por Git antes de publicar; no subas credenciales. En Laragon, los valores predeterminados son `127.0.0.1`, base `ggg`, usuario `root` y contraseña vacía.
 3. En una base que aún no tenga estas mejoras, ejecuta **una sola vez y en este orden**:
    - `database/migrations/database_migration.sql`
    - `database/migrations/database_migration_validaciones.sql`
@@ -22,7 +22,7 @@ Aplicación web en PHP y MySQL para administrar clientes de un gimnasio, membres
 4. La migración BCV conserva los nombres y duración de planes históricos en cada pago, reemplaza el catálogo anterior y crea el plan inicial **Básico** a 15 USD. Haz una copia de seguridad antes de ejecutarla; esta operación no se debe repetir.
 5. La migración `database_migration_cedula_separada.sql` también se ejecuta una sola vez. Separa los prefijos reconocidos; las cédulas anteriores que solo contienen números quedan sin tipo para no inventar ese dato.
 6. Si ya ejecutaste estas migraciones en una instalación, no vuelvas a aplicarlas allí. Asegúrate de tener al menos un operador activo con rol de administrador antes de habilitar el acceso.
-7. El sistema calcula `APP_BASE_URL` con la URL pública de la petición. Puedes configurarla con la variable de entorno `APP_BASE_URL` (sin barra final). Para producción, define también `APP_ENV=production` y credenciales de base de datos válidas.
+7. El sistema calcula `APP_BASE_URL` con la URL pública de la petición. Puedes configurarla con la variable de entorno `APP_BASE_URL` (sin barra final).
 8. Abre la aplicación, inicia sesión y revisa **Configuración**.
 
 > Las migraciones amplían un esquema existente; no crean desde cero las tablas base `clientes`, `pagos` y `operator`. Verifica que esas tablas y sus columnas requeridas estén presentes antes de instalarlas en otro entorno.

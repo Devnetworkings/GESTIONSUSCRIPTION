@@ -1,5 +1,3 @@
-USE ggg;
-
 ALTER TABLE `clientes`
     ADD COLUMN `tipo_documento` CHAR(1) NULL AFTER `id`;
 
