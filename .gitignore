@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+/includes/conexion.prod.php
 /tmp/*
 !/tmp/.htaccess
 *.rar
