@@ -2,7 +2,8 @@
 
 require_once __DIR__ . '/entorno.php';
 
-$esProduccion = strtolower(getenv('APP_ENV') ?: 'development') === 'production';
+$esProduccion = (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY !== 'Windows')
+    || strtolower(getenv('APP_ENV') ?: 'development') === 'production';
 $configuracionProduccion = __DIR__ . '/conexion.prod.php';
 
 if ($esProduccion && is_file($configuracionProduccion)) {

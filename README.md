@@ -12,7 +12,7 @@ Aplicación web en PHP y MySQL para administrar clientes de un gimnasio, membres
 ## Instalación
 
 1. Haz una copia de seguridad de la base de datos antes de actualizar el sistema.
-2. En producción, puedes definir `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` y `APP_ENV=production` en el panel del hosting. Si el hosting entrega la conexión en `includes/conexion.prod.php`, colócala allí en el paquete que subas y define `APP_ENV=production`; el archivo está excluido de Git para proteger las credenciales. En Laragon, los valores predeterminados son `127.0.0.1`, base `ggg`, usuario `root` y contraseña vacía.
+2. En producción, puedes definir `DB_HOST`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` en el panel del hosting. Si el hosting entrega la conexión en `includes/conexion.prod.php`, colócala allí en el paquete que subas; el sistema la detecta automáticamente en servidores Linux y el archivo está excluido de Git. En Laragon, los valores predeterminados son `127.0.0.1`, base `ggg`, usuario `root` y contraseña vacía.
 3. En una base que aún no tenga estas mejoras, ejecuta **una sola vez y en este orden**:
    - `database/migrations/database_migration.sql`
    - `database/migrations/database_migration_validaciones.sql`
