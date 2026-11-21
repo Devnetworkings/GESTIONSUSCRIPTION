@@ -5,7 +5,9 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/validaciones.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
-requireActiveOperator($pdo);
+require_once __DIR__ . '/../includes/auditoria.php';
+$currentOperator = requireActiveOperator($pdo);
+requireOperatorRole($currentOperator, ['admin', 'operador']);
 
 $id = trim($_POST['id'] ?? '');
 $cedula = descomponerCedula($_POST['ci'] ?? '', $_POST['tipo_documento'] ?? '');
@@ -40,15 +42,50 @@ if ($fecha_vencimiento !== '' && (!$fechaParseada || $fechaParseada->format('Y-m
 }
 
 try {
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare('SELECT tipo_documento, ci, nombres, apellidos, tlf, email, direccion, estatus, fecha_vencimiento FROM clientes WHERE id = ? LIMIT 1');
+    $stmt->execute([$id]);
+    $before = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$before) {
+        $pdo->rollBack();
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'No se encontró el cliente.']);
+        exit;
+    }
     $stmt = $pdo->prepare(
         'UPDATE clientes SET tipo_documento = ?, ci = ?, nombres = ?, apellidos = ?, tlf = ?, email = ?, direccion = ?, estatus = ?, fecha_vencimiento = ? WHERE id = ?'
     );
     $stmt->execute([$cedula['tipo_documento'], $cedula['ci'], $nombres, $apellidos, $tlf, $email, $direccion, $estatus, $fecha_vencimiento !== '' ? $fecha_vencimiento : null, $id]);
+    $changes = registrarCambioAuditoria($before, [
+        'tipo_documento' => $cedula['tipo_documento'],
+        'ci' => $cedula['ci'],
+        'nombres' => $nombres,
+        'apellidos' => $apellidos,
+        'tlf' => $tlf,
+        'email' => $email,
+        'direccion' => $direccion,
+        'estatus' => $estatus,
+        'fecha_vencimiento' => $fecha_vencimiento !== '' ? $fecha_vencimiento : null
+    ]);
+    if ($changes) {
+        registrarAuditoria($pdo, 'cliente_actualizado', 'cliente', $id, $changes);
+    }
+    $pdo->commit();
     echo json_encode(['success' => true]);
 } catch (PDOException $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     http_response_code($e->getCode() === '23000' ? 409 : 500);
     echo json_encode([
         'success' => false,
         'message' => $e->getCode() === '23000' ? 'La identificación ya está asignada a otro cliente.' : 'No se pudo actualizar el cliente.'
     ]);
+} catch (RuntimeException $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    http_response_code(500);
+    error_log($e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'No se pudo actualizar el cliente.']);
 }

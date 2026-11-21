@@ -1,10 +1,36 @@
 # Guía de uso y operación
 
+## Instalación nueva y configuración
+
+1. Crea una base MySQL/MariaDB vacía en Laragon/phpMyAdmin o en el panel del hosting. El asistente no crea la base, solo las tablas dentro de ella.
+2. Ejecuta `composer install --no-dev --optimize-autoloader`.
+3. Abre la aplicación. Cuando no exista una instalación configurada, el sistema redirige automáticamente a `/setup/`. Ingresa los datos de conexión, la URL pública y los datos requeridos del administrador inicial.
+4. El asistente prueba la conexión, crea el esquema completo de la versión actual, crea el plan **Básico** a 15 USD y registra al primer administrador. Guarda la conexión en `.env` y elimina el archivo de habilitación.
+5. Inicia sesión. Si usarás recuperación de contraseña o verificación de correo, configura SMTP en `.env` y vuelve a enviar el enlace de verificación del correo del administrador.
+
+El asistente solo acepta una base vacía y bloquea la instalación si detecta `.env`, `includes/conexion.prod.php` o tablas de la aplicación en la base configurada. Después de instalar, `/setup/` solo puede ser accedido por una cuenta activa con rol **Soporte de TI**. No debe usarse para actualizar una instalación existente. Si prefieres instalar manualmente, copia `.env.example` a `.env`, completa los datos y carga `database/schema.sql` en una base vacía. Luego registra el primer operador desde el acceso mientras el sitio aún no sea público; el primero obtiene rol administrador.
+
+El archivo `.env` se carga con phpdotenv al iniciar PHP, se excluye de Git y el `.htaccess` del proyecto bloquea su descarga. En Nginx, añade también una regla como `location ~ /\.(?!well-known).* { deny all; }`. No publiques credenciales ni expongas archivos temporales de instalación.
+
+La configuración antigua sigue disponible: las variables de entorno del servidor funcionan sin `.env`, y `includes/conexion.prod.php` conserva prioridad en producción. Si ya hay un `.env`, `conexion.prod.php` o variables de servidor configurados, no uses el asistente para sobrescribirlos; conserva el método existente.
+
+`.env` contempla:
+
+| Variables | Uso |
+| --- | --- |
+| `APP_ENV`, `APP_BASE_URL` | Entorno y URL pública necesaria para enlaces de correo. |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Conexión MySQL/MariaDB. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` | Envío opcional de verificación y recuperación por SMTP. |
+
 ## Acceso y roles
 
-Inicia sesión con el usuario y contraseña del operador. El primer operador registrado cuando la tabla de operadores está vacía recibe el rol de administrador; después, solo los administradores pueden registrar operadores o administrar la configuración. Si la base ya contiene operadores, un responsable debe comprobar que exista al menos un administrador activo antes de habilitar el acceso.
+Inicia sesión con el usuario y contraseña de tu cuenta. En una instalación con asistente, usa la cuenta de administrador creada durante el setup. En la instalación manual, la primera persona que se registra crea su cuenta de administrador; no hay contraseña predeterminada compartida. Si la base ya contiene operadores, un responsable debe comprobar que exista al menos un administrador activo antes de habilitar el acceso.
 
-Los operadores trabajan con clientes y pagos. Solo los administradores ven **Configuración**, donde pueden gestionar planes, cuentas y reportes financieros. Desactivar una cuenta impide que inicie sesión, pero conserva su información y la atribución histórica de sus pagos. No se puede desactivar la propia cuenta ni dejar el sistema sin un administrador activo.
+**Operador** puede consultar y gestionar clientes y pagos. Cada cuenta activa puede actualizar su propio correo y teléfono en **Mi cuenta**. **Admin** tiene las facultades de operador y además administra operadores, planes, tasa, avisos y reportes financieros; puede corregir los demás datos de las cuentas. **Soporte de TI** puede consultar clientes y pagos en modo de solo lectura, ver el historial de auditoría y editar la configuración técnica (`.env`: conexión DB, URL pública y SMTP). No puede crear ni modificar clientes o pagos ni administrar roles, estados, planes o reportes financieros.
+
+Para guardar cambios técnicos se exige la contraseña actual. Los secretos no se muestran; dejar sus campos vacíos conserva el valor y hay una opción explícita para quitarlo. La nueva conexión se prueba antes de guardarse y debe contener el esquema y la misma cuenta activa. Si la conexión se administra con variables del hosting o `includes/conexion.prod.php`, el panel informa que debes cambiarla desde ese entorno. Después de guardar `.env`, reinicia PHP/Apache para que todos los procesos apliquen los cambios.
+
+Los estados de cuenta son **Activo** (verde), **Inactivo** (gris), **Vacaciones** (morado) y **Despedido** (rojo). Solo las cuentas activas pueden iniciar sesión. Al terminar el período de vacaciones, la cuenta se reactiva automáticamente en la siguiente petición al sistema. Los cambios conservan los registros históricos y no se puede dejar el sistema sin un administrador activo.
 
 ## Clientes y membresías
 
@@ -57,11 +83,34 @@ Desde **Configuración**, el administrador puede:
 - Consultar el precio convertido a bolívares con la tasa válida del BCV al momento de registrar el pago. Los pagos en divisas conservan el precio USD.
 - Consultar el estado de la tasa BCV o fijar una tasa manual cuando no haya una tasa oficial vigente del día.
 - Definir el aviso de vencimiento entre 0 y 90 días.
-- Crear operadores, cambiar roles y activar o desactivar cuentas.
+- Crear operadores y asignarles los roles operador, administrador o Soporte de TI.
+- Editar los datos de cualquier operador, excepto su contraseña.
+- Cambiar los estados de operadores y definir las fechas de vacaciones.
 - Actualizar el correo de un operador y enviar un enlace de verificación.
 - Consultar los ingresos para un rango de fechas.
 
-Para que la verificación y recuperación de correo funcionen, PHP debe poder enviar correo y `APP_BASE_URL` debe apuntar al lugar desde el que se abrirá el enlace. La aplicación solo considera verificado un correo cuando se completa el flujo mediante el enlace recibido.
+El historial de actividad registra inicios y cierres de sesión, cambios de cuentas, clientes, pagos y configuración. No guarda contraseñas, tokens ni secretos. Solo las cuentas con rol **Soporte de TI** pueden consultarlo.
+
+Desde **Configuración técnica**, Admin y Soporte de TI pueden modificar las variables disponibles de conexión, URL pública y SMTP. El asistente inicial `/setup/` es independiente y sigue bloqueado después de detectar una instalación; no se usa para estos cambios.
+
+### Recuperar contraseña y verificar correo
+
+En el inicio de sesión, selecciona **Olvidé mi contraseña**, escribe tu usuario y abre el enlace que llegue al correo verificado. El enlace de recuperación vence en una hora y solo se puede usar una vez. Si el correo todavía no está verificado, un administrador debe enviar el enlace desde **Configuración** y el operador debe confirmarlo primero.
+
+El envío usa PHPMailer por SMTP. Composer instala la biblioteca con `composer install --no-dev --optimize-autoloader`; en servidores de producción, incluye `vendor/` o ejecuta Composer durante el despliegue. Una opción sin costo para comenzar es Gmail SMTP, sujeto a los límites de envío de Google:
+
+| Variable de entorno | Ejemplo para Gmail |
+| --- | --- |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `tls` |
+| `SMTP_USERNAME` | Dirección Gmail completa |
+| `SMTP_PASSWORD` | Contraseña de aplicación de Google, no la contraseña normal |
+| `SMTP_FROM_EMAIL` | La misma dirección Gmail |
+| `SMTP_FROM_NAME` | `Sistema de gestión GGG` |
+| `APP_BASE_URL` | URL pública de la aplicación, sin barra final |
+
+Para obtener la contraseña de aplicación, activa la verificación en dos pasos de la cuenta Google y crea una contraseña de aplicación. Configura estos valores en `.env` o como variables de entorno disponibles para PHP/Apache o en el panel del hosting; reinicia el servidor si corresponde. `APP_BASE_URL` debe ser el origen público correcto, preferiblemente con HTTPS; no se infiere de la petición para evitar que enlaces de recuperación dependan del encabezado Host. No guardes contraseñas SMTP en el repositorio. Para otra cuenta de correo, solicita a su proveedor el host, puerto y modo TLS/SSL. Solo se permite `tls` o `ssl`.
 
 ## Consultar y exportar ingresos
 

@@ -3,8 +3,20 @@
 if (defined('GGG_ENTORNO_LISTO')) {
     return;
 }
-
 define('GGG_ENTORNO_LISTO', true);
+
+$raizAplicacion = dirname(__DIR__);
+$archivoEntorno = $raizAplicacion . DIRECTORY_SEPARATOR . '.env';
+$cargadorComposer = $raizAplicacion . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+if (is_file($cargadorComposer)) {
+    require_once $cargadorComposer;
+}
+if (is_file($archivoEntorno)) {
+    if (!class_exists(\Dotenv\Dotenv::class)) {
+        throw new RuntimeException('Instala las dependencias con composer install para cargar .env.');
+    }
+    \Dotenv\Dotenv::createUnsafeImmutable($raizAplicacion)->safeLoad();
+}
 
 date_default_timezone_set('America/Caracas');
 
@@ -12,7 +24,6 @@ if (strtolower(getenv('APP_ENV') ?: 'development') === 'production') {
     ini_set('display_errors', '0');
     ini_set('log_errors', '1');
 }
-
 $tmpDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'tmp';
 if (!is_dir($tmpDir)) {
     @mkdir($tmpDir, 0700, true);
@@ -36,21 +47,4 @@ if (!function_exists('ggg_app_base_url')) {
         }
         return '';
     }
-}
-
-if (ggg_app_base_url() === '' && !empty($_SERVER['HTTP_HOST'])) {
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || ((string) ($_SERVER['SERVER_PORT'] ?? '') === '443')
-        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-    $scheme = $https ? 'https' : 'http';
-    $root = str_replace('\\', '/', dirname(__DIR__));
-    $docRoot = str_replace('\\', '/', rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/'));
-    $basePath = '';
-    if ($docRoot !== '' && strncmp($root, $docRoot, strlen($docRoot)) === 0) {
-        $basePath = substr($root, strlen($docRoot));
-    }
-    $baseUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . $basePath;
-    putenv('APP_BASE_URL=' . $baseUrl);
-    $_ENV['APP_BASE_URL'] = $baseUrl;
-    $_SERVER['APP_BASE_URL'] = $baseUrl;
 }

@@ -19,11 +19,12 @@ if ($esProduccion && is_file($configuracionProduccion)) {
 }
 
 $host = getenv('DB_HOST') ?: '127.0.0.1';
+$port = filter_var(getenv('DB_PORT') ?: '3306', FILTER_VALIDATE_INT);
 $dbname = getenv('DB_NAME') ?: 'ggg';
 $username = getenv('DB_USER') ?: 'root';
 $password = getenv('DB_PASSWORD') ?: '';
 
-if ($esProduccion && (!getenv('DB_HOST') || !getenv('DB_NAME') || !getenv('DB_USER'))) {
+if ($esProduccion && (!getenv('DB_HOST') || !$port || !getenv('DB_NAME') || !getenv('DB_USER'))) {
     http_response_code(500);
     header('Content-Type: application/json');
     error_log('Production database credentials are not configured.');
@@ -31,7 +32,7 @@ if ($esProduccion && (!getenv('DB_HOST') || !getenv('DB_NAME') || !getenv('DB_US
 }
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
 } catch (PDOException $e) {

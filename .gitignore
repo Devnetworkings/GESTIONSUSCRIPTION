@@ -1,7 +1,10 @@
 .env
 .env.*
 !.env.example
+/.setup-enabled
+/.setup-progress
 /includes/conexion.prod.php
+/vendor/
 /tmp/*
 !/tmp/.htaccess
 *.rar

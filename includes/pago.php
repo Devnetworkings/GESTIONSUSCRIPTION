@@ -32,8 +32,15 @@ class Pago
 
     public function guardar($pdo)
     {
+        require_once __DIR__ . '/auditoria.php';
         $pdo->beginTransaction();
         try {
+            $stmt = $pdo->prepare('SELECT fecha_vencimiento, estatus FROM clientes WHERE id = ? FOR UPDATE');
+            $stmt->execute([$this->idCliente]);
+            $clienteAntes = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$clienteAntes) {
+                throw new RuntimeException('No se encontró el cliente del pago.');
+            }
             $stmt = $pdo->prepare(
                 'INSERT INTO pagos (id, id_cliente, reference, monto, coin, id_operador, metodo_pago, id_plan, monto_usd, tasa_bcv, fecha_valor_bcv, plan_nombre_snapshot, plan_duracion_meses_snapshot) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
@@ -65,6 +72,30 @@ class Pago
             if ($stmt->rowCount() === 0) {
                 throw new RuntimeException('No se pudo actualizar el vencimiento del cliente.');
             }
+            $stmt = $pdo->prepare('SELECT id FROM pagos WHERE reference = ? LIMIT 1');
+            $stmt->execute([$this->reference]);
+            $idPago = $stmt->fetchColumn();
+            $stmt = $pdo->prepare('SELECT fecha_vencimiento, estatus FROM clientes WHERE id = ? LIMIT 1');
+            $stmt->execute([$this->idCliente]);
+            $clienteDespues = $stmt->fetch(PDO::FETCH_ASSOC);
+            registrarAuditoria($pdo, 'pago_registrado', 'pago', $idPago ?: null, [
+                'cliente_id' => $this->idCliente,
+                'reference' => $this->reference,
+                'monto' => $this->monto,
+                'coin' => $this->coin,
+                'metodo_pago' => $this->metodoPago,
+                'id_plan' => $this->idPlan,
+                'monto_usd' => $this->montoUsd,
+                'tasa_bcv' => $this->tasaBcv,
+                'fecha_valor_bcv' => $this->fechaValorBcv
+            ]);
+            registrarAuditoria($pdo, 'membresia_renovada', 'cliente', $this->idCliente, [
+                'fecha_vencimiento' => [
+                    'anterior' => $clienteAntes['fecha_vencimiento'],
+                    'nuevo' => $clienteDespues['fecha_vencimiento']
+                ],
+                'estatus' => ['anterior' => $clienteAntes['estatus'], 'nuevo' => 'Activo']
+            ]);
             $pdo->commit();
             return true;
         } catch (Throwable $e) {

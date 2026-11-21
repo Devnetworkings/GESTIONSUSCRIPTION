@@ -5,8 +5,10 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/cliente.php';
 require_once __DIR__ . '/../includes/validaciones.php';
+require_once __DIR__ . '/../includes/auditoria.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
-requireActiveOperator($pdo);
+$currentOperator = requireActiveOperator($pdo);
+requireOperatorRole($currentOperator, ['admin', 'operador']);
 
 $tipoDocumento = strtoupper(trim($_POST['tipo_documento'] ?? ''));
 $ciNumero = trim($_POST['ci'] ?? '');
@@ -42,14 +44,38 @@ if ($email !== '' && !emailValido($email)) {
 }
 
 try {
+    $pdo->beginTransaction();
     $nuevoCliente = new Cliente($cedula['tipo_documento'], $cedula['ci'], $nombres, $apellidos, $tlf, $email, $direccion);
     $nuevoCliente->guardar($pdo);
+    $stmt = $pdo->prepare('SELECT id FROM clientes WHERE tipo_documento <=> ? AND ci = ? LIMIT 1');
+    $stmt->execute([$cedula['tipo_documento'], $cedula['ci']]);
+    $idCliente = $stmt->fetchColumn();
+    registrarAuditoria($pdo, 'cliente_creado', 'cliente', $idCliente ?: null, [
+        'tipo_documento' => $cedula['tipo_documento'],
+        'ci' => $cedula['ci'],
+        'nombres' => $nombres,
+        'apellidos' => $apellidos,
+        'tlf' => $tlf,
+        'email' => $email,
+        'direccion' => $direccion
+    ]);
+    $pdo->commit();
     echo json_encode(['success' => true]);
 } catch (PDOException $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     http_response_code($e->getCode() === '23000' ? 409 : 500);
     echo json_encode([
         'success' => false,
         'message' => $e->getCode() === '23000' ? 'Ya existe un cliente con esa cédula.' : 'No se pudo registrar el cliente.'
     ]);
+} catch (RuntimeException $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    http_response_code(500);
+    error_log($e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'No se pudo registrar el cliente.']);
 }
 ?>

@@ -1,7 +1,13 @@
 <?php
 
 require_once __DIR__ . '/includes/entorno.php';
+require_once __DIR__ . '/includes/estado_instalacion.php';
 session_start();
+
+if (gggInstallationIsClean()) {
+    header('Location: setup/', true, 302);
+    exit;
+}
 
 $display_login = 'grid';
 $display_dashboard = 'none';
@@ -11,7 +17,7 @@ $display_dashboard = 'none';
 <head>
     <meta charset="utf-8" />
     <title>Sistema de gestión</title>
-    <link rel="stylesheet" href="assets/css/app.css?v=20261018-monthlyplans2" />
+    <link rel="stylesheet" href="assets/css/app.css?v=20261120-client-filters-footer" />
 </head>
 <body>
 
@@ -28,8 +34,7 @@ $display_dashboard = 'none';
     document.getElementById('loginpage').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('nombre-actor').innerText = res.operador.toUpperCase();
-    const botonConfig = Array.from(document.querySelectorAll('.tabs-navigation button')).find(button => button.textContent.includes('Configuración'));
-    if (botonConfig) botonConfig.style.display = res.role === 'admin' ? '' : 'none';
+    configurarPestanasRol(res.role);
     cargarVista('clientes'); 
 })">
     <div class="login-card-heading">
@@ -122,18 +127,21 @@ $display_dashboard = 'none';
         </div>
 
         <section id="panel-resumen" class="dashboard-summary" aria-live="polite">
-            <article><strong id="resumen-activos">—</strong><span> Activas</span></article>
-            <article><strong id="resumen-por-vencer">—</strong><span> Por vencer</span></article>
-            <article><strong id="resumen-vencidos">—</strong><span> Membresías vencidas</span></article>
-            <article><strong id="resumen-inactivos">—</strong><span> Inactivas</span></article>
-            <article><strong id="resumen-deuda">—</strong><span> Con deuda</span></article>
+            <button type="button" class="summary-filter" data-filter="Activo" aria-pressed="false" onclick="filtrarClientesDesdeResumen('Activo')"><strong id="resumen-activos">—</strong><span>Activas</span></button>
+            <button type="button" class="summary-filter" data-filter="Por vencer" aria-pressed="false" onclick="filtrarClientesDesdeResumen('Por vencer')"><strong id="resumen-por-vencer">—</strong><span>Por vencer</span></button>
+            <button type="button" class="summary-filter" data-filter="Vencido" aria-pressed="false" onclick="filtrarClientesDesdeResumen('Vencido')"><strong id="resumen-vencidos">—</strong><span>Membresías vencidas</span></button>
+            <button type="button" class="summary-filter" data-filter="Inactivo" aria-pressed="false" onclick="filtrarClientesDesdeResumen('Inactivo')"><strong id="resumen-inactivos">—</strong><span>Inactivas</span></button>
+            <button type="button" class="summary-filter" data-filter="Deuda" aria-pressed="false" onclick="filtrarClientesDesdeResumen('Deuda')"><strong id="resumen-deuda">—</strong><span>Con deuda</span></button>
             <p id="resumen-error" class="summary-error" role="status" hidden></p>
         </section>
         
         <nav class="tabs-navigation">
             <button class="tab-btn" onclick="cargarVista('clientes')">Clientes</button>
             <button class="tab-btn" onclick="cargarVista('pagos')">Pagos</button>
-            <button class="tab-btn" onclick="cargarVista('config')">Configuración</button>
+            <button class="tab-btn" onclick="cargarVista('config')" style="display:none;">Configuración</button>
+            <button class="tab-btn" onclick="cargarVista('config-ti')" style="display:none;">Configuración técnica</button>
+            <button class="tab-btn" onclick="cargarVista('cuenta')">Mi cuenta</button>
+            <button class="tab-btn" onclick="cargarVista('soporte')" style="display:none;">Soporte de TI</button>
         </nav>
         
         <div id="content">
@@ -159,9 +167,11 @@ $display_dashboard = 'none';
                 <option value="Deuda">Deuda</option>
             </select>
 
-            <button class="btn-nuevo" onclick="toggleFormularioCliente()">+ Nuevo Cliente</button>
+            <button type="button" class="btn-limpiar-filtros" onclick="limpiarFiltrosClientes()">Limpiar filtros</button>
+            <button class="btn-nuevo" id="btn-nuevo-cliente" onclick="toggleFormularioCliente()">+ Nuevo Cliente</button>
         </div>
     </div>
+    <p id="aviso-solo-lectura" role="status" style="display:none;">Perfil de Soporte TI: consultas de clientes y pagos en modo de solo lectura.</p>
     
     <div class="clientes-layout">
         <div class="tabla-container">
@@ -335,7 +345,7 @@ $display_dashboard = 'none';
 
 <div id="vista-config" style="display:none; flex-direction:column; gap:20px; padding:20px;">
     <section class="config-card">
-        <h2>Planes de membresía</h2>
+        <h2>Planes de membresía <span class="help-tip" tabindex="0" aria-label="Ayuda sobre planes" title="Los planes duran un mes. Se pueden desactivar sin borrar el historial de pagos." data-tip="Los planes duran un mes. Se pueden desactivar sin borrar el historial de pagos.">?</span></h2>
         <form id="form-plan" onsubmit="guardarPlan(event)">
             <label>Nombre
                 <input type="text" name="nombre" maxlength="80" placeholder="Nombre del plan" required>
@@ -346,10 +356,9 @@ $display_dashboard = 'none';
             <button type="submit" class="btn-nuevo">Añadir plan</button>
         </form>
         <div id="lista-planes"></div>
-        <p>Todos los planes duran un mes y sus precios se definen en USD. Los pagos en bolívares se convierten con la tasa USD del BCV vigente al registrar el pago. Los planes quitados se desactivan para preservar el historial.</p>
     </section>
     <section class="config-card">
-        <h2>Tasa de cambio BCV</h2>
+        <h2>Tasa de cambio BCV <span class="help-tip" tabindex="0" aria-label="Ayuda sobre la tasa BCV" title="Si no se puede consultar el BCV, se usa una tasa exitosa de hoy. Si no existe, ingresa una tasa manual; una consulta oficial posterior la reemplazará." data-tip="Si no se puede consultar el BCV, se usa una tasa exitosa de hoy. Si no existe, ingresa una tasa manual; una consulta oficial posterior la reemplazará.">?</span></h2>
         <p id="tasa-bcv-admin" role="status">Consultando tasa oficial…</p>
         <a href="https://www.bcv.org.ve/" target="_blank" rel="noopener noreferrer">Ver tasa publicada por el BCV</a>
         <form id="form-tasa-manual" onsubmit="guardarTasaManual(event)" hidden>
@@ -358,10 +367,9 @@ $display_dashboard = 'none';
             </label>
             <button type="submit" class="btn-nuevo">Guardar tasa manual</button>
         </form>
-        <p>Si no se puede consultar al BCV, solo se reutiliza una consulta exitosa del mismo día. Si no existe, un administrador puede ingresar una tasa manual; la próxima consulta exitosa la reemplaza.</p>
     </section>
     <section class="config-card">
-        <h2>Vencimientos y operadores</h2>
+        <h2>Vencimientos y operadores <span class="help-tip" tabindex="0" aria-label="Ayuda sobre operadores" title="Las cuentas que no estén Activas no pueden iniciar sesión. Las vacaciones se reactivan automáticamente al terminar su período." data-tip="Las cuentas que no estén Activas no pueden iniciar sesión. Las vacaciones se reactivan automáticamente al terminar su período.">?</span></h2>
         <form id="form-aviso" onsubmit="guardarAviso(event)">
             <label>Días de anticipación para avisar
                 <input type="number" name="dias_aviso" min="0" max="90" required>
@@ -371,14 +379,13 @@ $display_dashboard = 'none';
         <div id="lista-operadores"></div>
     </section>
     <section class="config-card">
-        <h2>Resumen de ingresos</h2>
+        <h2>Resumen de ingresos <span class="help-tip" tabindex="0" aria-label="Ayuda sobre el resumen de ingresos" title="Solo administradores pueden consultar y exportar balances financieros." data-tip="Solo administradores pueden consultar y exportar balances financieros.">?</span></h2>
         <form id="form-reporte" onsubmit="cargarReporte(event)">
             <label>Desde <input type="date" name="desde" required></label>
             <label>Hasta <input type="date" name="hasta" required></label>
             <button type="submit" class="btn-nuevo">Consultar</button>
             <button type="button" class="btn-nuevo" onclick="exportarReporteExcel()">Exportar pagos y balance (Excel)</button>
         </form>
-        <p>El Excel incluye una hoja con cada pago y sus datos de cliente, referencia, hora y operador, además del balance de ingresos por moneda.</p>
         <div id="resultado-reporte"></div>
     </section>
     <section class="config-card">
@@ -396,11 +403,96 @@ $display_dashboard = 'none';
             <select name="operator_role">
                 <option value="operador">Rol: operador</option>
                 <option value="admin">Rol: administrador</option>
+                <option value="soporte_ti">Rol: soporte de TI</option>
             </select>
             <button type="submit" class="btn-nuevo">Crear operador</button>
         </form>
     </section>
 </div>
+<section id="vista-config-tecnica" class="config-card" style="display:none; margin:20px; padding:20px;">
+    <h2>Configuración técnica</h2>
+    <p>Administra conexión a la base de datos, URL pública y correo saliente. Los cambios se guardan en <code>.env</code>; los secretos no se muestran. Déjalos vacíos para conservarlos y vuelve a escribir tu contraseña actual para guardar.</p>
+    <p id="mensaje-config-tecnica" role="status"></p>
+    <form id="form-config-tecnica" onsubmit="guardarConfiguracionTecnica(event)">
+        <input type="hidden" name="csrf_token">
+        <label>Contraseña actual de tu cuenta
+            <input type="password" name="current_password" maxlength="72" autocomplete="current-password" required>
+        </label>
+        <h3>Base de datos</h3>
+        <div class="config-row">
+            <label>Servidor
+                <input type="text" name="DB_HOST" maxlength="253" required>
+            </label>
+            <label>Puerto
+                <input type="number" name="DB_PORT" min="1" max="65535" required>
+            </label>
+            <label>Nombre de la base
+                <input type="text" name="DB_NAME" maxlength="64" pattern="[A-Za-z0-9_]+" required>
+            </label>
+            <label>Usuario
+                <input type="text" name="DB_USER" maxlength="128" required>
+            </label>
+            <label>Contraseña nueva (opcional)
+                <input type="password" name="DB_PASSWORD" maxlength="4096" autocomplete="new-password">
+                <small>En blanco conserva la contraseña actual.</small>
+            </label>
+            <label><input type="checkbox" name="clear_db_password" value="1"> Quitar contraseña guardada</label>
+        </div>
+        <label>URL pública
+            <input type="url" name="APP_BASE_URL" maxlength="2048" required>
+        </label>
+        <h3>Correo saliente (SMTP)</h3>
+        <div class="config-row">
+            <label>Servidor SMTP
+                <input type="text" name="SMTP_HOST" maxlength="253">
+            </label>
+            <label>Puerto SMTP
+                <input type="number" name="SMTP_PORT" min="1" max="65535" required>
+            </label>
+            <label>Seguridad
+                <select name="SMTP_SECURE"><option value="tls">TLS</option><option value="ssl">SSL</option></select>
+            </label>
+            <label>Usuario SMTP
+                <input type="text" name="SMTP_USERNAME" maxlength="254">
+            </label>
+            <label>Contraseña SMTP nueva (opcional)
+                <input type="password" name="SMTP_PASSWORD" maxlength="4096" autocomplete="new-password">
+                <small>En blanco conserva la contraseña actual.</small>
+            </label>
+            <label><input type="checkbox" name="clear_smtp_password" value="1"> Quitar contraseña SMTP guardada</label>
+            <label>Correo remitente
+                <input type="email" name="SMTP_FROM_EMAIL" maxlength="254">
+            </label>
+            <label>Nombre remitente
+                <input type="text" name="SMTP_FROM_NAME" maxlength="100">
+            </label>
+        </div>
+        <button type="submit" class="btn-nuevo">Guardar configuración técnica</button>
+    </form>
+</section>
+<section id="vista-cuenta" class="config-card account-view" style="display:none;">
+    <h2>Mi cuenta</h2>
+    <form id="form-perfil-operador" onsubmit="guardarPerfilOperador(event)">
+        <label>Correo
+            <input type="email" name="contacto" maxlength="254" required>
+        </label>
+        <label>Teléfono
+            <input type="tel" name="tlf" pattern="04[0-9]{2}-?[0-9]{7}" maxlength="12" required>
+        </label>
+        <button type="submit" class="btn-nuevo">Guardar mis datos</button>
+    </form>
+</section>
+<section id="vista-soporte" class="config-card support-view" style="display:none;">
+    <h2>Soporte de TI · Historial de actividad</h2>
+    <p>Registro de cambios realizados por el equipo. No se guardan contraseñas ni tokens.</p>
+    <div class="table-container">
+        <table class="celtable" id="tabla-auditoria">
+            <thead><tr><th>Fecha</th><th>Persona</th><th>Acción</th><th>Registro</th><th>Cambios</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div id="paginacion-auditoria" class="pagination-controls"></div>
+</section>
     </div>
     
     <div id="footer">
@@ -477,6 +569,6 @@ $display_dashboard = 'none';
         </div>
     </div>
 
-    <script src="assets/js/lg.js?v=20261118-cedula-separada"></script>
+    <script src="assets/js/lg.js?v=20261120-configuracion-ti"></script>
 </body>
 </html>

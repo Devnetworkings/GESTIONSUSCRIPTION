@@ -6,6 +6,7 @@ let paginaActualPagosLista = 1;
 let clientePerfilActual = null;
 let usuarioTemaActual = '';
 let tasaBcvPagoActual = null;
+let paginaActualAuditoria = 1;
 
 function claveTemaUsuario(usuario) {
     const identificador = String(usuario || '').trim().toLowerCase();
@@ -144,8 +145,7 @@ async function procesarFormulario(event, url, callbackExito) {
                 if (res.operador) sessionStorage.setItem('actorVIP', res.operador);
                 if (res.role) {
                     sessionStorage.setItem('operador_role', res.role);
-                    const botonConfig = Array.from(document.querySelectorAll('.tabs-navigation button')).find(button => button.textContent.includes('Configuración'));
-                    if (botonConfig) botonConfig.style.display = res.role === 'admin' ? '' : 'none';
+                    configurarPestanasRol(res.role);
                 }
             }
 
@@ -284,6 +284,10 @@ function cargarVista(nombreVista) {
     const vistaClientes = document.getElementById('vista-clientes');
     const vistaPagos = document.getElementById('vista-pagos');
     const vistaConfig = document.getElementById('vista-config');
+    const vistaConfigTi = document.getElementById('vista-config-tecnica');
+    const vistaCuenta = document.getElementById('vista-cuenta');
+    const vistaSoporte = document.getElementById('vista-soporte');
+    const role = sessionStorage.getItem('operador_role');
     document.querySelectorAll('.tabs-navigation .tab-btn').forEach(button => {
         const activa = button.getAttribute('onclick') === `cargarVista('${nombreVista}')`;
         button.classList.toggle('activa', activa);
@@ -293,6 +297,9 @@ function cargarVista(nombreVista) {
     if (vistaClientes) vistaClientes.style.display = 'none';
     if (vistaPagos) vistaPagos.style.display = 'none';
     if (vistaConfig) vistaConfig.style.display = 'none';
+    if (vistaConfigTi) vistaConfigTi.style.display = 'none';
+    if (vistaCuenta) vistaCuenta.style.display = 'none';
+    if (vistaSoporte) vistaSoporte.style.display = 'none';
 
     if (nombreVista === 'clientes' && vistaClientes) {
         vistaClientes.style.display = 'flex';
@@ -301,11 +308,53 @@ function cargarVista(nombreVista) {
     else if (nombreVista === 'pagos' && vistaPagos) {
         vistaPagos.style.display = 'flex';
         cargarTablaPagos();
-        cargarPlanesPago();
+        if (role !== 'soporte_ti') cargarPlanesPago();
     } else if (nombreVista === 'config' && vistaConfig && sessionStorage.getItem('operador_role') === 'admin') {
         vistaConfig.style.display = 'flex';
         cargarConfiguracion();
+    } else if (nombreVista === 'config-ti' && vistaConfigTi && ['admin', 'soporte_ti'].includes(role)) {
+        vistaConfigTi.style.display = 'block';
+        cargarConfiguracionTecnica();
+    } else if (nombreVista === 'cuenta' && vistaCuenta) {
+        vistaCuenta.style.display = 'block';
+        cargarPerfilOperador();
+    } else if (nombreVista === 'soporte' && vistaSoporte && sessionStorage.getItem('operador_role') === 'soporte_ti') {
+        vistaSoporte.style.display = 'block';
+        cargarAuditoria(1);
     }
+}
+
+function configurarPestanasRol(role) {
+    document.querySelectorAll('.tabs-navigation .tab-btn').forEach(button => {
+        const vista = button.getAttribute('onclick')?.match(/cargarVista\('([^']+)'\)/)?.[1];
+        button.style.display = vista === 'config' ? (role === 'admin' ? '' : 'none')
+            : vista === 'config-ti' ? (['admin', 'soporte_ti'].includes(role) ? '' : 'none')
+            : vista === 'soporte' ? (role === 'soporte_ti' ? '' : 'none')
+                : vista === 'cuenta' ? '' : '';
+    });
+
+    const esTi = role === 'soporte_ti';
+    const controlesEdicion = [
+        ['btn-nuevo-cliente', ''],
+        ['btn-nuevo-pago', ''],
+        ['form-cliente', 'none'],
+        ['addpay', 'none'],
+        ['btn-editar-cliente', ''],
+        ['form-editar-cliente', 'none']
+    ];
+    controlesEdicion.forEach(([id, display]) => {
+        const control = document.getElementById(id);
+        if (!control) return;
+        control.hidden = esTi;
+        control.style.display = esTi ? 'none' : display;
+        if (control.matches('form')) {
+            control.querySelectorAll('input, select, button').forEach(input => {
+                input.disabled = esTi;
+            });
+        }
+    });
+    const avisoSoloLectura = document.getElementById('aviso-solo-lectura');
+    if (avisoSoloLectura) avisoSoloLectura.style.display = esTi ? 'block' : 'none';
 }
 
 // Actualizada para manejar Login, Registro y la NUEVA vista de Recuperar Clave de forma segura
@@ -359,7 +408,7 @@ async function solicitarRecuperacion(event) {
 
 function toggleFormularioCliente() {
     const form = document.getElementById('form-cliente');
-    const boton = document.querySelector('.btn-nuevo');
+    const boton = document.getElementById('btn-nuevo-cliente');
 
     if (form.style.display === 'none' || form.style.display === '') {
         form.style.display = 'grid';
@@ -383,6 +432,11 @@ function cargarTablaClientes(pagina = 1) {
 
     const query = inputBusqueda ? inputBusqueda.value : '';
     const estatus = selectEstatus ? selectEstatus.value : '';
+    document.querySelectorAll('.summary-filter').forEach(button => {
+        const activa = button.dataset.filter === estatus;
+        button.classList.toggle('is-active', activa);
+        button.setAttribute('aria-pressed', String(activa));
+    });
 
     const tbody = document.querySelector('#tabla-clientes tbody');
     if (!tbody) return;
@@ -418,6 +472,22 @@ function cargarTablaClientes(pagina = 1) {
             dibujarPaginacionLista('paginacion-clientes', data.paginas || 1, pagina, cargarTablaClientes);
         })
         .catch(error => console.error("Error de conexión en el set:", error));
+}
+
+function filtrarClientesDesdeResumen(estatus) {
+    const selectEstatus = document.getElementById('filtro-estatus');
+    if (!selectEstatus) return;
+
+    selectEstatus.value = selectEstatus.value === estatus ? '' : estatus;
+    cargarVista('clientes');
+}
+
+function limpiarFiltrosClientes() {
+    const inputBusqueda = document.getElementById('input-busqueda');
+    const selectEstatus = document.getElementById('filtro-estatus');
+    if (inputBusqueda) inputBusqueda.value = '';
+    if (selectEstatus) selectEstatus.value = '';
+    cargarTablaClientes();
 }
 
 // --- GESTIÓN DE PAGOS ---
@@ -913,60 +983,197 @@ async function cargarConfiguracion() {
         const listaOperadores = document.getElementById('lista-operadores');
         listaOperadores.replaceChildren();
         data.operadores.forEach(operador => {
-            const form = document.createElement('form');
-            form.className = 'config-row';
-            form.onsubmit = event => actualizarRolOperador(event);
-            const id = document.createElement('input');
-            id.type = 'hidden';
-            id.name = 'id';
-            id.value = operador.id;
-            form.appendChild(id);
-            const nombre = document.createElement('span');
-            const estaActivo = Number(operador.activo) === 1;
-            nombre.textContent = `${operador.username} — ${operador.nombres} ${operador.apellidos} — ${estaActivo ? 'cuenta activa' : 'cuenta desactivada'} — ${operador.contacto_verified_at ? 'correo verificado' : 'correo sin verificar'}`;
-            form.appendChild(nombre);
-            const email = document.createElement('input');
-            email.type = 'email';
-            email.name = 'contacto';
-            email.maxLength = 254;
-            email.required = true;
-            email.value = operador.contacto || '';
-            email.placeholder = 'Correo de recuperación';
-            form.appendChild(email);
-            const saveEmail = document.createElement('button');
-            saveEmail.type = 'button';
-            saveEmail.textContent = 'Guardar correo';
-            saveEmail.onclick = () => guardarEmailOperador(operador.id, email.value);
-            form.appendChild(saveEmail);
+            const row = document.createElement('article');
+            row.className = 'operator-card';
+            const status = operador.operator_status || (Number(operador.activo) === 1 ? 'Activo' : 'Inactivo');
+            const isSelf = String(operador.id) === String(data.current_operator_id);
+            const heading = document.createElement('div');
+            heading.className = 'operator-heading';
+            const name = document.createElement('strong');
+            name.textContent = `${operador.username} — ${operador.nombres} ${operador.apellidos}`;
+            const badge = document.createElement('span');
+            badge.className = `operator-status status-${status.toLowerCase()}`;
+            badge.textContent = status;
+            heading.append(name, badge);
+            row.appendChild(heading);
+
+            const roleForm = document.createElement('form');
+            roleForm.className = 'operator-controls';
+            roleForm.onsubmit = event => actualizarRolOperador(event);
+            agregarCampoOculto(roleForm, 'id', operador.id);
             const role = document.createElement('select');
             role.name = 'role';
             role.add(new Option('Operador', 'operador'));
             role.add(new Option('Administrador', 'admin'));
+            role.add(new Option('Soporte de TI', 'soporte_ti'));
             role.value = operador.operator_role;
-            form.appendChild(role);
-            const button = document.createElement('button');
-            button.type = 'submit';
-            button.textContent = 'Guardar rol';
-            form.appendChild(button);
+            role.setAttribute('aria-label', `Rol de ${operador.username}`);
+            roleForm.appendChild(role);
+            const roleButton = document.createElement('button');
+            roleButton.type = 'submit';
+            roleButton.textContent = 'Guardar rol';
+            roleForm.appendChild(roleButton);
+            row.appendChild(roleForm);
+
+            const contact = document.createElement('div');
+            contact.className = 'operator-controls';
+            const email = document.createElement('input');
+            email.type = 'email';
+            email.maxLength = 254;
+            email.required = true;
+            email.value = operador.contacto || '';
+            email.placeholder = 'Correo de recuperación';
+            email.setAttribute('aria-label', `Correo de ${operador.username}`);
+            contact.appendChild(email);
+            const saveEmail = document.createElement('button');
+            saveEmail.type = 'button';
+            saveEmail.textContent = 'Guardar correo';
+            saveEmail.onclick = () => guardarEmailOperador(operador.id, email.value);
+            contact.appendChild(saveEmail);
             if (!operador.contacto_verified_at) {
                 const verify = document.createElement('button');
                 verify.type = 'button';
                 verify.textContent = 'Enviar verificación';
                 verify.onclick = () => enviarVerificacionCorreo(operador.id);
-                form.appendChild(verify);
+                contact.appendChild(verify);
             }
-            const status = document.createElement('button');
-            status.type = 'button';
-            status.textContent = estaActivo ? 'Desactivar acceso' : 'Reactivar acceso';
-            status.disabled = operador.id === data.current_operator_id;
-            status.title = status.disabled ? 'No puedes cambiar el estado de tu propia cuenta.' : '';
-            status.onclick = () => cambiarEstadoOperador(operador.id, !estaActivo);
-            form.appendChild(status);
-            listaOperadores.appendChild(form);
+            row.appendChild(contact);
+
+            const stateControls = document.createElement('div');
+            stateControls.className = 'operator-controls';
+            const stateSelect = document.createElement('select');
+            stateSelect.setAttribute('aria-label', `Estado de ${operador.username}`);
+            ['Activo', 'Inactivo', 'Vacaciones', 'Despedido'].forEach(value => stateSelect.add(new Option(value, value)));
+            stateSelect.value = status;
+            stateSelect.disabled = isSelf;
+            const vacationStart = document.createElement('input');
+            vacationStart.type = 'date';
+            vacationStart.value = operador.vacation_start || '';
+            vacationStart.setAttribute('aria-label', 'Inicio de vacaciones');
+            const vacationEnd = document.createElement('input');
+            vacationEnd.type = 'date';
+            vacationEnd.value = operador.vacation_end || '';
+            vacationEnd.setAttribute('aria-label', 'Fin de vacaciones');
+            vacationStart.hidden = vacationEnd.hidden = stateSelect.value !== 'Vacaciones';
+            stateSelect.onchange = () => {
+                vacationStart.hidden = vacationEnd.hidden = stateSelect.value !== 'Vacaciones';
+            };
+            const saveStatus = document.createElement('button');
+            saveStatus.type = 'button';
+            saveStatus.textContent = 'Guardar estado';
+            saveStatus.disabled = isSelf;
+            saveStatus.title = isSelf ? 'No puedes cambiar el estado de tu propia cuenta.' : '';
+            saveStatus.onclick = () => guardarEstadoOperador(operador.id, stateSelect.value, vacationStart.value, vacationEnd.value);
+            stateControls.append(stateSelect, vacationStart, vacationEnd, saveStatus);
+            row.appendChild(stateControls);
+
+            const details = document.createElement('details');
+            const summary = document.createElement('summary');
+            summary.textContent = 'Editar datos del operador';
+            details.appendChild(summary);
+            const profileForm = document.createElement('form');
+            profileForm.className = 'operator-profile-form';
+            profileForm.onsubmit = event => guardarDatosOperador(event);
+            agregarCampoOculto(profileForm, 'id', operador.id);
+            [
+                ['username', 'Usuario', operador.username],
+                ['nombres', 'Nombres', operador.nombres],
+                ['apellidos', 'Apellidos', operador.apellidos],
+                ['ci', 'Cédula', operador.ci],
+                ['tlf', 'Teléfono', operador.tlf],
+                ['contacto', 'Correo', operador.contacto],
+                ['direccion', 'Dirección', operador.direccion]
+            ].forEach(([field, label, value]) => {
+                const input = document.createElement('input');
+                input.name = field;
+                input.value = value || '';
+                input.placeholder = label;
+                input.setAttribute('aria-label', label);
+                input.required = ['username', 'nombres', 'ci', 'tlf', 'contacto'].includes(field);
+                if (field === 'contacto') input.type = 'email';
+                if (field === 'tlf') input.type = 'tel';
+                if (field === 'ci') {
+                    input.inputMode = 'numeric';
+                    input.pattern = '(?:[VEJGP]-?)?[0-9]{6,9}';
+                    input.maxLength = 11;
+                }
+                profileForm.appendChild(input);
+            });
+            const saveProfile = document.createElement('button');
+            saveProfile.type = 'submit';
+            saveProfile.textContent = 'Guardar datos';
+            profileForm.appendChild(saveProfile);
+            details.appendChild(profileForm);
+            row.appendChild(details);
+            listaOperadores.appendChild(row);
         });
     } catch (error) {
         alert(error.message);
     }
+}
+
+async function cargarConfiguracionTecnica() {
+    const form = document.getElementById('form-config-tecnica');
+    const message = document.getElementById('mensaje-config-tecnica');
+    if (!form || !message) return;
+
+    try {
+        const response = await fetch('api/configuracion_tecnica.php');
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cargar la configuración técnica.');
+
+        Object.entries(data.config).forEach(([key, value]) => {
+            if (form.elements[key]) form.elements[key].value = value ?? '';
+        });
+        form.elements.csrf_token.value = data.csrf_token;
+        form.elements.DB_PASSWORD.value = '';
+        form.elements.SMTP_PASSWORD.value = '';
+        form.elements.current_password.value = '';
+        form.elements.clear_db_password.checked = false;
+        form.elements.clear_smtp_password.checked = false;
+        form.querySelectorAll('input, select, button').forEach(control => {
+            control.disabled = !data.editable;
+        });
+        message.textContent = data.message || 'Guarda con tu contraseña actual. Los secretos no se muestran; en blanco se conservan.';
+        message.className = data.editable ? '' : 'notice error';
+    } catch (error) {
+        message.textContent = error.message;
+        message.className = 'notice error';
+    }
+}
+
+async function guardarConfiguracionTecnica(event) {
+    event.preventDefault();
+    const form = event.target;
+    const message = document.getElementById('mensaje-config-tecnica');
+
+    try {
+        const response = await fetch('api/configuracion_tecnica.php', {
+            method: 'POST',
+            body: new FormData(form)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo guardar la configuración técnica.');
+
+        form.elements.current_password.value = '';
+        form.elements.DB_PASSWORD.value = '';
+        form.elements.SMTP_PASSWORD.value = '';
+        form.elements.clear_db_password.checked = false;
+        form.elements.clear_smtp_password.checked = false;
+        message.textContent = data.message;
+        message.className = data.restart_required ? 'notice' : 'notice success';
+    } catch (error) {
+        message.textContent = error.message;
+        message.className = 'notice error';
+    }
+}
+
+function agregarCampoOculto(form, name, value) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
 }
 
 async function guardarConfigForm(event, action) {
@@ -1082,21 +1289,104 @@ async function actualizarRolOperador(event) {
     }
 }
 
-async function cambiarEstadoOperador(id, activar) {
-    const mensaje = activar
-        ? '¿Quieres reactivar el acceso de esta cuenta?'
-        : '¿Quieres desactivar esta cuenta? Sus registros históricos se conservarán.';
-    if (!window.confirm(mensaje)) return;
-
+async function guardarEstadoOperador(id, estado, inicio, fin) {
+    if (!window.confirm(`¿Quieres cambiar el estado de esta cuenta a "${estado}"?`)) return;
     const formData = new FormData();
     formData.set('action', 'estado_operador');
     formData.set('id', id);
-    formData.set('activo', activar ? '1' : '0');
+    formData.set('estado', estado);
+    formData.set('vacation_start', inicio);
+    formData.set('vacation_end', fin);
     try {
         const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cambiar el estado de la cuenta.');
         await cargarConfiguracion();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function guardarDatosOperador(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    formData.set('action', 'datos_operador');
+    try {
+        const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'No se pudieron guardar los datos.');
+        await cargarConfiguracion();
+        alert('Datos del operador actualizados.');
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function cargarPerfilOperador() {
+    try {
+        const response = await fetch('api/perfil_operador.php');
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cargar tu perfil.');
+        const form = document.getElementById('form-perfil-operador');
+        form.elements.contacto.value = data.perfil.contacto || '';
+        form.elements.tlf.value = data.perfil.tlf || '';
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function guardarPerfilOperador(event) {
+    event.preventDefault();
+    try {
+        const response = await fetch('api/perfil_operador.php', { method: 'POST', body: new FormData(event.target) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo actualizar tu perfil.');
+        alert(data.message);
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function cargarAuditoria(pagina) {
+    paginaActualAuditoria = pagina;
+    try {
+        const response = await fetch(`api/auditoria.php?pagina=${pagina}`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cargar el historial.');
+        const tbody = document.querySelector('#tabla-auditoria tbody');
+        tbody.replaceChildren();
+        data.data.forEach(log => {
+            const row = document.createElement('tr');
+            [log.created_at, log.actor_username, log.action, `${log.entity_type}${log.entity_id ? ` #${log.entity_id}` : ''}`, JSON.stringify(log.changes || {})].forEach(value => {
+                const cell = document.createElement('td');
+                cell.textContent = value || '';
+                row.appendChild(cell);
+            });
+            tbody.appendChild(row);
+        });
+        if (!data.data.length) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 5;
+            cell.textContent = 'Aún no hay actividad registrada.';
+            row.appendChild(cell);
+            tbody.appendChild(row);
+        }
+        const pagination = document.getElementById('paginacion-auditoria');
+        pagination.replaceChildren();
+        const previous = document.createElement('button');
+        previous.type = 'button';
+        previous.textContent = 'Anterior';
+        previous.disabled = pagina <= 1;
+        previous.onclick = () => cargarAuditoria(pagina - 1);
+        const label = document.createElement('span');
+        label.textContent = `Página ${data.pagina} de ${Math.max(1, data.paginas)}`;
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.textContent = 'Siguiente';
+        next.disabled = pagina >= data.paginas;
+        next.onclick = () => cargarAuditoria(pagina + 1);
+        pagination.append(previous, label, next);
     } catch (error) {
         alert(error.message);
     }
@@ -1200,8 +1490,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     const role = data.role || 'operador';
                     sessionStorage.setItem('operador_role', role);
-                    const botonConfig = Array.from(document.querySelectorAll('.tabs-navigation button')).find(button => button.textContent.includes('Configuración'));
-                    if (botonConfig) botonConfig.style.display = role === 'admin' ? '' : 'none';
+                    configurarPestanasRol(role);
 
                     // Cargamos la tabla principal
                     cargarVista('clientes');

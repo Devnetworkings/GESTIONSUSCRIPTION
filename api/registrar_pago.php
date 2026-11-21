@@ -7,7 +7,8 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/pago.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
-requireActiveOperator($pdo);
+$currentOperator = requireActiveOperator($pdo);
+requireOperatorRole($currentOperator, ['admin', 'operador']);
 require_once __DIR__ . '/../includes/bcv_rate.php';
 
 // Captura de datos enviados por Fetch

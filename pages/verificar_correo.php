@@ -32,5 +32,5 @@ if (preg_match('/^[a-f0-9]{64}$/', $token)) {
 <!doctype html>
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Verificación de correo</title><link rel="stylesheet" href="../assets/css/app.css"></head>
-<body><main id="loginpage"><section id="formu"><h3>VERIFICACIÓN DE CORREO</h3><p><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p><a href="../Index.php">Ir al inicio de sesión</a></section></main></body>
+<body><main id="loginpage"><section id="formu"><h3>VERIFICACIÓN DE CORREO</h3><p><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p><a href="../index.php">Ir al inicio de sesión</a></section></main></body>
 </html>

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/correo.php';
+
 function enviarVerificacionContacto(PDO $pdo, $operadorId, $username, $email)
 {
     $baseUrl = ggg_app_base_url();
@@ -23,12 +25,12 @@ function enviarVerificacionContacto(PDO $pdo, $operadorId, $username, $email)
 
     $link = $baseUrl . '/pages/verificar_correo.php?token=' . rawurlencode($token);
     $message = "Hola {$username},\n\nConfirma que tienes acceso a este correo abriendo el enlace antes de 24 horas:\n{$link}\n\nSi no esperabas este mensaje, ignóralo.";
-    if (mail($email, 'Verifica tu correo', $message, "Content-Type: text/plain; charset=UTF-8\r\n")) {
-        return true;
+    try {
+        enviarCorreoTexto($email, 'Verifica tu correo', $message);
+    } catch (Throwable $e) {
+        $stmt = $pdo->prepare('DELETE FROM email_verification_tokens WHERE operator_id = ?');
+        $stmt->execute([(string) $operadorId]);
+        throw $e;
     }
-
-    $stmt = $pdo->prepare('DELETE FROM email_verification_tokens WHERE operator_id = ?');
-    $stmt->execute([(string) $operadorId]);
-    error_log('Operator email verification message could not be sent.');
-    return false;
+    return true;
 }

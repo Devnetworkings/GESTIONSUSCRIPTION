@@ -10,6 +10,8 @@ require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/operador.php';
 require_once __DIR__ . '/../includes/validaciones.php';
 require_once __DIR__ . '/../includes/email_verification.php';
+require_once __DIR__ . '/../includes/auth_guard.php';
+require_once __DIR__ . '/../includes/auditoria.php';
 header('Content-Type: application/json'); //[cite: 10]
 
 try {
@@ -25,16 +27,21 @@ $role = 'operador';
 if ($operatorCount === 0) {
     $role = 'admin';
 } else {
-    $stmtRole = $pdo->prepare('SELECT operator_role FROM operator WHERE id = ? AND activo = 1 LIMIT 1');
-    $stmtRole->execute([$_SESSION['operador_id'] ?? '']);
-    if ($stmtRole->fetchColumn() !== 'admin') {
+    if (!isset($_SESSION['operador_id'])) {
+        http_response_code(401);
+        ob_clean();
+        echo json_encode(['success' => false, 'message' => 'Debes iniciar sesión.']);
+        exit;
+    }
+    $currentOperator = requireActiveOperator($pdo);
+    if ($currentOperator['operator_role'] !== 'admin') {
         http_response_code(403);
         ob_clean();
         echo json_encode(['success' => false, 'message' => 'Solo un administrador puede registrar operadores.']);
         exit;
     }
     $roleSolicitado = $_POST['operator_role'] ?? 'operador';
-    if (!in_array($roleSolicitado, ['admin', 'operador'], true)) {
+    if (!in_array($roleSolicitado, ['admin', 'operador', 'soporte_ti'], true)) {
         http_response_code(422);
         ob_clean();
         echo json_encode(['success' => false, 'message' => 'El rol solicitado no es válido.']);
@@ -76,13 +83,28 @@ if (!emailValido($contacto)) {
 }
 
 try {
-    // ¡Acción! Instanciamos a nuestro operador y lo guardamos
+    $pdo->beginTransaction();
     $nuevoOperador = new Operador($ci, $nombres, $apellidos, $contacto, $direccion, $tlf, $username, $pw, $role);
     $nuevoOperador->guardar($pdo);
     $stmtId = $pdo->prepare('SELECT id FROM operator WHERE username = ? LIMIT 1');
     $stmtId->execute([$username]);
     $operadorId = $stmtId->fetchColumn();
-    $correoEnviado = $operadorId && enviarVerificacionContacto($pdo, $operadorId, $username, $contacto);
+    registrarAuditoria(
+        $pdo,
+        'operador_creado',
+        'operador',
+        (string) $operadorId,
+        ['username' => $username, 'nombres' => $nombres, 'apellidos' => $apellidos, 'operator_role' => $role],
+        isset($_SESSION['operador_id']) ? (string) $_SESSION['operador_id'] : null,
+        isset($_SESSION['operador_nombre']) ? (string) $_SESSION['operador_nombre'] : 'Sistema'
+    );
+    $pdo->commit();
+    try {
+        $correoEnviado = $operadorId && enviarVerificacionContacto($pdo, $operadorId, $username, $contacto);
+    } catch (Throwable $e) {
+        error_log('No se pudo enviar verificación al operador: ' . $e->getMessage());
+        $correoEnviado = false;
+    }
 
     ob_clean(); // Limpiamos el escenario antes de enviar[cite: 10]
     echo json_encode([
@@ -93,12 +115,25 @@ try {
     ]); //[cite: 10]
 
 } catch (PDOException $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     ob_clean(); // Limpiamos el escenario antes de enviar[cite: 10]
     if ($e->getCode() == 23000) {
+        http_response_code(409);
         echo json_encode(['success' => false, 'message' => '¡Cédula o teléfono ya registrados!']); //[cite: 10]
     } else {
-        // Agregué el mensaje real del error para que te sea más fácil depurar en el futuro
-        echo json_encode(['success' => false, 'message' => 'Error interno en la bóveda: ' . $e->getMessage()]);
+        error_log('No se pudo registrar el operador: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'No se pudo registrar el operador.']);
     }
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log('No se pudo registrar el operador: ' . $e->getMessage());
+    ob_clean();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'No se pudo registrar el operador.']);
 }
 ?>

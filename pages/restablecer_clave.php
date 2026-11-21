@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="password" name="password" placeholder="Nueva contraseña (mínimo 10 caracteres)" minlength="10" required>
             <input type="submit" id="send" value="Guardar contraseña">
         <?php else: ?>
-            <a href="../Index.php">Ir al inicio de sesión</a>
+            <a href="../index.php">Ir al inicio de sesión</a>
         <?php endif; ?>
     </form>
 </main>
