@@ -2,12 +2,13 @@
 require_once __DIR__ . '/../includes/entorno.php';
 session_start();
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
 require_once __DIR__ . '/../includes/auditoria.php';
 
 $currentOperator = requireActiveOperator($pdo);
-requireOperatorRole($currentOperator, ['admin', 'soporte_ti']);
+requireOperatorRole($currentOperator, ['soporte_ti']);
 
 $projectRoot = dirname(__DIR__);
 $envPath = $projectRoot . DIRECTORY_SEPARATOR . '.env';
@@ -259,6 +260,10 @@ if ($method !== 'GET' && $method !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
     exit;
+}
+
+if ($method === 'POST') {
+    gggRequireCsrfToken();
 }
 
 try {

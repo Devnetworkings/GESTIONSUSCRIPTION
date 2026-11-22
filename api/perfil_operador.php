@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/entorno.php';
 session_start();
 header('Content-Type: application/json');
+require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
 require_once __DIR__ . '/../includes/validaciones.php';
@@ -22,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
     exit;
 }
+
+gggRequireCsrfToken();
 
 $email = trim($_POST['contacto'] ?? '');
 $telefono = normalizarTelefono($_POST['tlf'] ?? '');

@@ -9,6 +9,10 @@ if (gggInstallationIsClean()) {
     exit;
 }
 
+require_once __DIR__ . '/includes/csrf.php';
+$csrfToken = gggCsrfToken();
+header('Cache-Control: no-store, private');
+
 $display_login = 'grid';
 $display_dashboard = 'none';
 ?>
@@ -16,6 +20,7 @@ $display_dashboard = 'none';
 <html lang="es">
 <head>
     <meta charset="utf-8" />
+    <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <title>Sistema de gestión</title>
     <link rel="stylesheet" href="assets/css/app.css?v=20261120-client-filters-footer" />
 </head>
@@ -122,7 +127,7 @@ $display_dashboard = 'none';
                     <span class="theme-toggle-icon" aria-hidden="true">☾</span>
                     <span class="theme-toggle-text">Modo oscuro</span>
                 </button>
-                <a href="#" onclick="cerrarSesionEscenario()" class="logout-link">Cerrar sesión</a>
+                <a href="#" onclick="cerrarSesionEscenario(); return false;" class="logout-link">Cerrar sesión</a>
             </div>
         </div>
 
@@ -139,7 +144,7 @@ $display_dashboard = 'none';
             <button class="tab-btn" onclick="cargarVista('clientes')">Clientes</button>
             <button class="tab-btn" onclick="cargarVista('pagos')">Pagos</button>
             <button class="tab-btn" onclick="cargarVista('config')" style="display:none;">Configuración</button>
-            <button class="tab-btn" onclick="cargarVista('config-ti')" style="display:none;">Configuración técnica</button>
+            <button class="tab-btn" id="tab-config-tecnica" onclick="cargarVista('config-ti')" style="display:none;">Configuración técnica</button>
             <button class="tab-btn" onclick="cargarVista('cuenta')">Mi cuenta</button>
             <button class="tab-btn" onclick="cargarVista('soporte')" style="display:none;">Soporte de TI</button>
         </nav>

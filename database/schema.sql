@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS `operator` (
     `operator_status` VARCHAR(20) NOT NULL DEFAULT 'Activo',
     `vacation_start` DATE NULL,
     `vacation_end` DATE NULL,
+    `login_failed_attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    `login_locked_until` DATETIME NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_operator_ci` (`ci`),
     UNIQUE KEY `uq_operator_tlf` (`TLF`),

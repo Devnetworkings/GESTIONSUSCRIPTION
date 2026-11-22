@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../includes/entorno.php';
 session_start();
 header('Content-Type: application/json');
+require_once __DIR__ . '/../includes/csrf.php';
+gggRequireCsrfToken();
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/correo.php';
 

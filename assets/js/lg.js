@@ -7,6 +7,18 @@ let clientePerfilActual = null;
 let usuarioTemaActual = '';
 let tasaBcvPagoActual = null;
 let paginaActualAuditoria = 1;
+let configuracionTecnicaEditable = false;
+
+function fetchConCsrf(url, options = {}) {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (!token) {
+        return Promise.reject(new Error('No se pudo validar la sesión. Recarga la página.'));
+    }
+
+    const headers = new Headers(options.headers || {});
+    headers.set('X-CSRF-Token', token);
+    return fetch(url, { ...options, headers });
+}
 
 function claveTemaUsuario(usuario) {
     const identificador = String(usuario || '').trim().toLowerCase();
@@ -123,7 +135,7 @@ async function procesarFormulario(event, url, callbackExito) {
     const formData = new FormData(form);
 
     try {
-        const rawResponse = await fetch(url, { method: 'POST', body: formData }).then(r => r.text());
+        const rawResponse = await fetchConCsrf(url, { method: 'POST', body: formData }).then(r => r.text());
 
         let res;
         try {
@@ -180,7 +192,7 @@ async function procesarFormulario(event, url, callbackExito) {
                     alert("¡Talento registrado! Rodando la toma del pago pendiente... 🎬");
 
                     const pagoPendiente = window.pagoPendienteForm;
-                    fetch('api/registrar_pago.php', { method: 'POST', body: pagoPendiente })
+                    fetchConCsrf('api/registrar_pago.php', { method: 'POST', body: pagoPendiente })
                         .then(r => r.text())
                         .then(txt => {
                             try { return JSON.parse(txt.trim()); }
@@ -312,7 +324,7 @@ function cargarVista(nombreVista) {
     } else if (nombreVista === 'config' && vistaConfig && sessionStorage.getItem('operador_role') === 'admin') {
         vistaConfig.style.display = 'flex';
         cargarConfiguracion();
-    } else if (nombreVista === 'config-ti' && vistaConfigTi && ['admin', 'soporte_ti'].includes(role)) {
+    } else if (nombreVista === 'config-ti' && vistaConfigTi && role === 'soporte_ti' && configuracionTecnicaEditable) {
         vistaConfigTi.style.display = 'block';
         cargarConfiguracionTecnica();
     } else if (nombreVista === 'cuenta' && vistaCuenta) {
@@ -328,10 +340,13 @@ function configurarPestanasRol(role) {
     document.querySelectorAll('.tabs-navigation .tab-btn').forEach(button => {
         const vista = button.getAttribute('onclick')?.match(/cargarVista\('([^']+)'\)/)?.[1];
         button.style.display = vista === 'config' ? (role === 'admin' ? '' : 'none')
-            : vista === 'config-ti' ? (['admin', 'soporte_ti'].includes(role) ? '' : 'none')
+            : vista === 'config-ti' ? 'none'
             : vista === 'soporte' ? (role === 'soporte_ti' ? '' : 'none')
                 : vista === 'cuenta' ? '' : '';
     });
+
+    configuracionTecnicaEditable = false;
+    actualizarDisponibilidadConfiguracionTecnica(role);
 
     const esTi = role === 'soporte_ti';
     const controlesEdicion = [
@@ -355,6 +370,26 @@ function configurarPestanasRol(role) {
     });
     const avisoSoloLectura = document.getElementById('aviso-solo-lectura');
     if (avisoSoloLectura) avisoSoloLectura.style.display = esTi ? 'block' : 'none';
+}
+
+async function actualizarDisponibilidadConfiguracionTecnica(role) {
+    const tab = document.getElementById('tab-config-tecnica');
+    if (!tab || role !== 'soporte_ti') return;
+
+    try {
+        const response = await fetch('api/configuracion_tecnica.php');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo validar el acceso a la configuración técnica.');
+        }
+
+        configuracionTecnicaEditable = data.editable === true;
+        tab.style.display = configuracionTecnicaEditable ? '' : 'none';
+    } catch (error) {
+        configuracionTecnicaEditable = false;
+        tab.style.display = 'none';
+        console.error('No se pudo validar la configuración técnica:', error);
+    }
 }
 
 // Actualizada para manejar Login, Registro y la NUEVA vista de Recuperar Clave de forma segura
@@ -383,7 +418,7 @@ async function solicitarRecuperacion(event) {
     const textoOriginal = boton ? (boton.value || boton.innerText) : '';
     if (boton) boton.disabled = true;
     try {
-        const response = await fetch('api/solicitar_recuperacion.php', { method: 'POST', body: new FormData(form) });
+        const response = await fetchConCsrf('api/solicitar_recuperacion.php', { method: 'POST', body: new FormData(form) });
         const data = await response.json();
         if (!response.ok || !data.success) {
             throw new Error(data.message || 'No se pudo solicitar el enlace.');
@@ -1121,6 +1156,13 @@ async function cargarConfiguracionTecnica() {
         const response = await fetch('api/configuracion_tecnica.php');
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cargar la configuración técnica.');
+        configuracionTecnicaEditable = data.editable === true;
+        if (!configuracionTecnicaEditable) {
+            const tab = document.getElementById('tab-config-tecnica');
+            if (tab) tab.style.display = 'none';
+            cargarVista('clientes');
+            return;
+        }
 
         Object.entries(data.config).forEach(([key, value]) => {
             if (form.elements[key]) form.elements[key].value = value ?? '';
@@ -1148,7 +1190,7 @@ async function guardarConfiguracionTecnica(event) {
     const message = document.getElementById('mensaje-config-tecnica');
 
     try {
-        const response = await fetch('api/configuracion_tecnica.php', {
+        const response = await fetchConCsrf('api/configuracion_tecnica.php', {
             method: 'POST',
             body: new FormData(form)
         });
@@ -1180,7 +1222,7 @@ async function guardarConfigForm(event, action) {
     event.preventDefault();
     const formData = new FormData(event.target);
     formData.set('action', action);
-    const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
+    const response = await fetchConCsrf('api/configuracion_api.php', { method: 'POST', body: formData });
     const data = await response.json();
     if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo guardar.');
     return data;
@@ -1209,7 +1251,7 @@ async function cambiarEstadoPlan(id, activar) {
     formData.set('id', id);
     formData.set('activo', activar ? '1' : '0');
     try {
-        const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
+        const response = await fetchConCsrf('api/configuracion_api.php', { method: 'POST', body: formData });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cambiar el estado del plan.');
         await cargarConfiguracion();
@@ -1245,7 +1287,7 @@ async function enviarVerificacionCorreo(id) {
     formData.set('action', 'verificar_email');
     formData.set('id', id);
     try {
-        const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
+        const response = await fetchConCsrf('api/configuracion_api.php', { method: 'POST', body: formData });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo enviar el enlace.');
         alert(data.message || 'Enlace de verificación enviado.');
@@ -1260,7 +1302,7 @@ async function guardarEmailOperador(id, contacto) {
     formData.set('id', id);
     formData.set('contacto', contacto.trim());
     try {
-        const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
+        const response = await fetchConCsrf('api/configuracion_api.php', { method: 'POST', body: formData });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo guardar el correo.');
         await cargarConfiguracion();
@@ -1298,7 +1340,7 @@ async function guardarEstadoOperador(id, estado, inicio, fin) {
     formData.set('vacation_start', inicio);
     formData.set('vacation_end', fin);
     try {
-        const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
+        const response = await fetchConCsrf('api/configuracion_api.php', { method: 'POST', body: formData });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cambiar el estado de la cuenta.');
         await cargarConfiguracion();
@@ -1312,7 +1354,7 @@ async function guardarDatosOperador(event) {
     const formData = new FormData(event.target);
     formData.set('action', 'datos_operador');
     try {
-        const response = await fetch('api/configuracion_api.php', { method: 'POST', body: formData });
+        const response = await fetchConCsrf('api/configuracion_api.php', { method: 'POST', body: formData });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudieron guardar los datos.');
         await cargarConfiguracion();
@@ -1338,7 +1380,7 @@ async function cargarPerfilOperador() {
 async function guardarPerfilOperador(event) {
     event.preventDefault();
     try {
-        const response = await fetch('api/perfil_operador.php', { method: 'POST', body: new FormData(event.target) });
+        const response = await fetchConCsrf('api/perfil_operador.php', { method: 'POST', body: new FormData(event.target) });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo actualizar tu perfil.');
         alert(data.message);
@@ -1395,7 +1437,7 @@ async function cargarAuditoria(pagina) {
 async function registrarOperador(event) {
     event.preventDefault();
     try {
-        const response = await fetch('api/register.php', { method: 'POST', body: new FormData(event.target) });
+        const response = await fetchConCsrf('api/register.php', { method: 'POST', body: new FormData(event.target) });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo crear el operador.');
         event.target.reset();
@@ -1442,7 +1484,7 @@ function alternarEdicionCliente() {
 async function guardarEdicionCliente(event) {
     event.preventDefault();
     try {
-        const response = await fetch('api/actualizar_cliente.php', { method: 'POST', body: new FormData(event.target) });
+        const response = await fetchConCsrf('api/actualizar_cliente.php', { method: 'POST', body: new FormData(event.target) });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo guardar el cliente.');
         await abrirPerfilCliente(event.target.elements.id.value);
@@ -1465,7 +1507,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Verificamos si el actor tiene su pase VIP en esta pestaña específica
     if (!sessionStorage.getItem('sesion_activa')) {
-        fetch('api/logout.php').catch(() => { });
+        fetchConCsrf('api/logout.php', { method: 'POST' }).catch(error => console.error('No se pudo limpiar la sesión del servidor:', error));
         toggleLogin('login');
     } else {
         // Si recargó, verificamos con PHP
@@ -1509,9 +1551,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function cerrarSesionEscenario() {
+async function cerrarSesionEscenario() {
+    try {
+        const response = await fetchConCsrf('api/logout.php', { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo cerrar la sesión.');
+        }
+    } catch (error) {
+        alert(error.message || 'No se pudo cerrar la sesión en el servidor.');
+        return;
+    }
+
     sessionStorage.removeItem('sesion_activa');
     sessionStorage.removeItem('operador_role');
     sessionStorage.removeItem('actorVIP');
-    window.location.href = 'api/logout.php';
+    window.location.href = 'index.php';
 }

@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/entorno.php';
 session_start();
-header('Content-Type: application/json');
+require_once __DIR__ . '/../includes/csrf.php';
+header('Content-Type: application/json; charset=utf-8');
+gggRequireCsrfToken();
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/validaciones.php';
 require_once __DIR__ . '/../includes/auth_guard.php';

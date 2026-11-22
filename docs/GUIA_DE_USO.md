@@ -26,7 +26,9 @@ La configuración antigua sigue disponible: las variables de entorno del servido
 
 Inicia sesión con el usuario y contraseña de tu cuenta. En una instalación con asistente, usa la cuenta de administrador creada durante el setup. En la instalación manual, la primera persona que se registra crea su cuenta de administrador; no hay contraseña predeterminada compartida. Si la base ya contiene operadores, un responsable debe comprobar que exista al menos un administrador activo antes de habilitar el acceso.
 
-**Operador** puede consultar y gestionar clientes y pagos. Cada cuenta activa puede actualizar su propio correo y teléfono en **Mi cuenta**. **Admin** tiene las facultades de operador y además administra operadores, planes, tasa, avisos y reportes financieros; puede corregir los demás datos de las cuentas. **Soporte de TI** puede consultar clientes y pagos en modo de solo lectura, ver el historial de auditoría y editar la configuración técnica (`.env`: conexión DB, URL pública y SMTP). No puede crear ni modificar clientes o pagos ni administrar roles, estados, planes o reportes financieros.
+**Operador** puede consultar y gestionar clientes y pagos. Cada cuenta activa puede actualizar su propio correo y teléfono en **Mi cuenta**. **Admin** tiene las facultades de operador y además administra operadores, planes, tasa, avisos y reportes financieros; puede corregir los demás datos de las cuentas. **Soporte de TI** puede consultar clientes y pagos en modo de solo lectura, ver el historial de auditoría y editar la configuración técnica cuando el servidor permite hacerlo. No puede crear ni modificar clientes o pagos ni administrar roles, estados, planes o reportes financieros.
+
+La interfaz oculta las opciones según el rol, pero esa visibilidad no es una barrera de seguridad: cada endpoint vuelve a validar la sesión activa y el rol en el servidor. Las solicitudes que modifican datos requieren además un token CSRF asociado a la sesión.
 
 Para guardar cambios técnicos se exige la contraseña actual. Los secretos no se muestran; dejar sus campos vacíos conserva el valor y hay una opción explícita para quitarlo. La nueva conexión se prueba antes de guardarse y debe contener el esquema y la misma cuenta activa. Si la conexión se administra con variables del hosting o `includes/conexion.prod.php`, el panel informa que debes cambiarla desde ese entorno. Después de guardar `.env`, reinicia PHP/Apache para que todos los procesos apliquen los cambios.
 
@@ -91,11 +93,13 @@ Desde **Configuración**, el administrador puede:
 
 El historial de actividad registra inicios y cierres de sesión, cambios de cuentas, clientes, pagos y configuración. No guarda contraseñas, tokens ni secretos. Solo las cuentas con rol **Soporte de TI** pueden consultarlo.
 
-Desde **Configuración técnica**, Admin y Soporte de TI pueden modificar las variables disponibles de conexión, URL pública y SMTP. El asistente inicial `/setup/` es independiente y sigue bloqueado después de detectar una instalación; no se usa para estos cambios.
+La pestaña **Configuración técnica** solo se muestra a Soporte de TI cuando los ajustes pueden editarse desde el panel. Si la conexión se administra con `includes/conexion.prod.php` o con variables externas, el panel no muestra esa pestaña; esos valores se cambian desde el servidor. El endpoint vuelve a validar el rol y exige token CSRF y contraseña actual al guardar. El asistente inicial `/setup/` es independiente y tiene su propio token CSRF.
 
 ### Recuperar contraseña y verificar correo
 
 En el inicio de sesión, selecciona **Olvidé mi contraseña**, escribe tu usuario y abre el enlace que llegue al correo verificado. El enlace de recuperación vence en una hora y solo se puede usar una vez. Si el correo todavía no está verificado, un administrador debe enviar el enlace desde **Configuración** y el operador debe confirmarlo primero.
+
+Después de tres contraseñas incorrectas consecutivas, la cuenta queda bloqueada durante 15 minutos. Un inicio de sesión correcto reinicia el contador. Si necesitas entrar antes, solicita el cambio de contraseña con **Olvidé mi contraseña**; al establecer una nueva clave se elimina el bloqueo. En una instalación existente, aplica `database/migrations/database_migration_bloqueo_acceso.sql` una sola vez; una instalación nueva ya crea estas columnas.
 
 El envío usa PHPMailer por SMTP. Composer instala la biblioteca con `composer install --no-dev --optimize-autoloader`; en servidores de producción, incluye `vendor/` o ejecuta Composer durante el despliegue. Una opción sin costo para comenzar es Gmail SMTP, sujeto a los límites de envío de Google:
 

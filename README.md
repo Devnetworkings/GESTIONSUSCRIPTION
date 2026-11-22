@@ -37,6 +37,7 @@ Haz una copia de seguridad antes de actualizar. Las migraciones modifican el esq
 - `database/migrations/database_migration_cedula_separada.sql`
 - `database/migrations/database_migration_operadores_auditoria.sql`
 - `database/migrations/database_migration_recuperacion_contrasena.sql`
+- `database/migrations/database_migration_bloqueo_acceso.sql`
 
 La migración BCV reemplaza el catálogo de planes, conserva snapshots de pagos históricos y crea el plan inicial **Básico** a 15 USD; no la repitas. La migración de cédula separa el prefijo del documento. Si ya ejecutaste las migraciones anteriores, aplica solo una migración nueva cuando la guía de esa versión lo indique.
 
@@ -51,7 +52,7 @@ Las migraciones amplían un esquema existente; no crean desde cero las tablas ba
 - Registro de pagos en USD o en VES convertido automáticamente usando la tasa USD publicada por el BCV.
 - Tasa BCV, Fecha Valor y precio base en USD guardados en cada nuevo pago en bolívares.
 - Renovación automática de la fecha de vencimiento al guardar un pago.
-- Gestión administrativa de planes, operadores, roles y estados (activo, inactivo, vacaciones y despedido), con configuración técnica de DB/SMTP disponible para Admin y Soporte de TI.
+- Gestión administrativa de planes, operadores, roles y estados (activo, inactivo, vacaciones y despedido); la configuración técnica de DB/SMTP está disponible solo para Soporte de TI cuando el servidor permite editarla.
 - Actualización personal de correo/teléfono; Soporte de TI consulta clientes y pagos sin modificarlos y puede acceder al historial de auditoría.
 - Registro de actividad de inicio de sesión, cambios de cuentas, clientes, pagos y configuración, sin guardar contraseñas ni tokens.
 - Resumen de ingresos consultable por período y exportable a un libro Excel `.xlsx` con columnas ajustadas, resumen, cada pago y sus datos de cliente/operador, totales diarios y balance bruto por moneda con gráficos.

@@ -1,10 +1,15 @@
 <?php
+require_once __DIR__ . '/../includes/entorno.php';
+session_start();
+require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/conexion.php';
+$csrfToken = gggCsrfToken();
 $token = $_POST['token'] ?? $_GET['token'] ?? '';
 $message = '';
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    gggRequireCsrfToken();
     $password = $_POST['password'] ?? '';
     if (!preg_match('/^[a-f0-9]{64}$/', $token) || strlen($password) < 10 || strlen($password) > 72) {
         $message = 'Enlace no válido o contraseña menor a 10 caracteres.';
@@ -18,7 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->rollBack();
                 $message = 'El enlace expiró o ya fue utilizado. Solicita uno nuevo.';
             } else {
-                $stmt = $pdo->prepare('UPDATE operator SET PW = ? WHERE id = ?');
+                $stmt = $pdo->prepare(
+                    'UPDATE operator
+                     SET PW = ?, login_failed_attempts = 0, login_locked_until = NULL
+                     WHERE id = ?'
+                );
                 $stmt->execute([password_hash($password, PASSWORD_DEFAULT), $operatorId]);
                 $stmt = $pdo->prepare('DELETE FROM password_reset_tokens WHERE operator_id = ?');
                 $stmt->execute([$operatorId]);
@@ -47,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($message !== ''): ?><p><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
         <?php if (!$success): ?>
             <input type="hidden" name="token" value="<?= htmlspecialchars($token, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
             <input type="password" name="password" placeholder="Nueva contraseña (mínimo 10 caracteres)" minlength="10" required>
             <input type="submit" id="send" value="Guardar contraseña">
         <?php else: ?>

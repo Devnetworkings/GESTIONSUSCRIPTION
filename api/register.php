@@ -3,6 +3,9 @@
 ob_start(); // Encendemos la aspiradora para atrapar espacios fantasma[cite: 10]
 require_once __DIR__ . '/../includes/entorno.php';
 session_start();
+require_once __DIR__ . '/../includes/csrf.php';
+header('Content-Type: application/json; charset=utf-8');
+gggRequireCsrfToken();
 ini_set('display_errors', 0); //[cite: 10]
 error_reporting(0); //[cite: 10]
 
@@ -12,7 +15,6 @@ require_once __DIR__ . '/../includes/validaciones.php';
 require_once __DIR__ . '/../includes/email_verification.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
 require_once __DIR__ . '/../includes/auditoria.php';
-header('Content-Type: application/json'); //[cite: 10]
 
 try {
     $operatorCount = (int) $pdo->query('SELECT COUNT(*) FROM operator')->fetchColumn();

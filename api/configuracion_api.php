@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/entorno.php';
 session_start();
+require_once __DIR__ . '/../includes/csrf.php';
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/email_verification.php';
@@ -35,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
     exit;
 }
+
+gggRequireCsrfToken();
 
 $action = $_POST['action'] ?? '';
 try {
