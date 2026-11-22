@@ -28,6 +28,8 @@ Inicia sesión con el usuario y contraseña de tu cuenta. En una instalación co
 
 **Operador** puede consultar y gestionar clientes y pagos. Cada cuenta activa puede actualizar su propio correo y teléfono en **Mi cuenta**. **Admin** tiene las facultades de operador y además administra operadores, planes, tasa, avisos y reportes financieros; puede corregir los demás datos de las cuentas. **Soporte de TI** puede consultar clientes y pagos en modo de solo lectura, ver el historial de auditoría y editar la configuración técnica cuando el servidor permite hacerlo. No puede crear ni modificar clientes o pagos ni administrar roles, estados, planes o reportes financieros.
 
+En **Mi cuenta** también se muestran, solo para consulta, los nombres, apellidos, cédula, dirección, usuario, rol, estado y período de vacaciones. Si algún dato de solo lectura está incorrecto, comunícalo al administrador. La contraseña nunca se muestra: solicita desde esa pantalla un enlace de un solo uso enviado al correo verificado para definir una nueva. La recuperación por correo requiere que el correo esté verificado y que el servidor tenga SMTP configurado.
+
 La interfaz oculta las opciones según el rol, pero esa visibilidad no es una barrera de seguridad: cada endpoint vuelve a validar la sesión activa y el rol en el servidor. Las solicitudes que modifican datos requieren además un token CSRF asociado a la sesión.
 
 Para guardar cambios técnicos se exige la contraseña actual. Los secretos no se muestran; dejar sus campos vacíos conserva el valor y hay una opción explícita para quitarlo. La nueva conexión se prueba antes de guardarse y debe contener el esquema y la misma cuenta activa. Si la conexión se administra con variables del hosting o `includes/conexion.prod.php`, el panel informa que debes cambiarla desde ese entorno. Después de guardar `.env`, reinicia PHP/Apache para que todos los procesos apliquen los cambios.
@@ -64,6 +66,8 @@ Para registrar un pago:
 4. Confirma el pago. Si se guarda correctamente, se renueva el vencimiento por un mes y el movimiento aparece en el historial.
 
 Las referencias no se pueden repetir. Si la cédula no corresponde a un cliente registrado, registra primero el cliente; el formulario puede continuar con el pago pendiente.
+
+Los formularios de clientes y pagos desactivan las sugerencias guardadas por el navegador para evitar reutilizar datos o referencias anteriores. El selector de clientes en el formulario de pago conserva las sugerencias propias del sistema para elegir un cliente existente.
 
 ## Tasa de cambio del BCV
 

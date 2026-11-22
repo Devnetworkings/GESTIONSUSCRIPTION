@@ -12,9 +12,18 @@ $operator = requireActiveOperator($pdo);
 $id = (string) $_SESSION['operador_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $stmt = $pdo->prepare('SELECT contacto, tlf, contacto_verified_at FROM operator WHERE id = ? LIMIT 1');
+    $stmt = $pdo->prepare(
+        'SELECT nombres, apellidos, ci, contacto, tlf, direccion, username, operator_role, activo,
+                operator_status, vacation_start, vacation_end, contacto_verified_at
+         FROM operator WHERE id = ? LIMIT 1'
+    );
     $stmt->execute([$id]);
-    echo json_encode(['success' => true, 'perfil' => $stmt->fetch(PDO::FETCH_ASSOC)]);
+    $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($perfil) {
+        $perfil['contacto_verificado'] = !empty($perfil['contacto_verified_at']);
+        unset($perfil['contacto_verified_at']);
+    }
+    echo json_encode(['success' => true, 'perfil' => $perfil]);
     exit;
 }
 

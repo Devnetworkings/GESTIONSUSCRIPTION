@@ -19,7 +19,7 @@ try {
     $stmt->execute([$username]);
     $operator = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$operator || empty($operator['contacto_verified_at']) || !filter_var($operator['contacto'] ?? '', FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(['success' => true, 'message' => 'Si la cuenta tiene un correo válido, recibirás un enlace para restablecer la contraseña.']);
+        echo json_encode(['success' => true, 'message' => 'Si la cuenta tiene un correo verificado, recibirás un enlace para restablecer la contraseña.']);
         exit;
     }
 
@@ -48,7 +48,7 @@ try {
         $stmt->execute([hash('sha256', $token)]);
         throw $e;
     }
-    echo json_encode(['success' => true, 'message' => 'Si la cuenta tiene un correo válido, recibirás un enlace para restablecer la contraseña.']);
+    echo json_encode(['success' => true, 'message' => 'Si la cuenta tiene un correo verificado, recibirás un enlace para restablecer la contraseña.']);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();

@@ -1369,9 +1369,36 @@ async function cargarPerfilOperador() {
         const response = await fetch('api/perfil_operador.php');
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cargar tu perfil.');
+        if (!data.perfil) throw new Error('No se encontró tu perfil.');
+        const perfil = data.perfil;
         const form = document.getElementById('form-perfil-operador');
-        form.elements.contacto.value = data.perfil.contacto || '';
-        form.elements.tlf.value = data.perfil.tlf || '';
+        form.elements.contacto.value = perfil.contacto || '';
+        form.elements.tlf.value = perfil.tlf || '';
+
+        const datosLectura = {
+            'perfil-operador-nombres': perfil.nombres,
+            'perfil-operador-apellidos': perfil.apellidos,
+            'perfil-operador-ci': perfil.ci,
+            'perfil-operador-direccion': perfil.direccion,
+            'perfil-operador-username': perfil.username,
+            'perfil-operador-rol': ({
+                admin: 'Administrador',
+                operador: 'Operador',
+                soporte_ti: 'Soporte de TI'
+            })[perfil.operator_role] || perfil.operator_role,
+            'perfil-operador-estado': perfil.operator_status || (Number(perfil.activo) === 1 ? 'Activo' : 'Inactivo'),
+            'perfil-operador-vacaciones': perfil.vacation_start || perfil.vacation_end
+                ? `${perfil.vacation_start || '—'} a ${perfil.vacation_end || '—'}`
+                : 'No registradas'
+        };
+        Object.entries(datosLectura).forEach(([id, valor]) => {
+            document.getElementById(id).textContent = valor || '—';
+        });
+
+        document.getElementById('estado-verificacion-correo').textContent = perfil.contacto_verificado
+            ? 'verificado'
+            : 'pendiente de verificación';
+        document.querySelector('#form-cambio-clave [name="username"]').value = perfil.username || '';
     } catch (error) {
         alert(error.message);
     }
@@ -1384,8 +1411,37 @@ async function guardarPerfilOperador(event) {
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo actualizar tu perfil.');
         alert(data.message);
+        await cargarPerfilOperador();
     } catch (error) {
         alert(error.message);
+    }
+}
+
+async function solicitarCambioClave(event) {
+    event.preventDefault();
+    const form = event.target;
+    const boton = form.querySelector('button[type="submit"]');
+    const estado = document.getElementById('estado-cambio-clave');
+    boton.disabled = true;
+    estado.hidden = false;
+    estado.setAttribute('role', 'status');
+    estado.textContent = '';
+
+    try {
+        const response = await fetchConCsrf('api/solicitar_recuperacion.php', {
+            method: 'POST',
+            body: new FormData(form)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo solicitar el enlace.');
+        }
+        estado.textContent = data.message;
+    } catch (error) {
+        estado.setAttribute('role', 'alert');
+        estado.textContent = error.message || 'No se pudo procesar la solicitud.';
+    } finally {
+        boton.disabled = false;
     }
 }
 

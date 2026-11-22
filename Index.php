@@ -22,7 +22,7 @@ $display_dashboard = 'none';
     <meta charset="utf-8" />
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <title>Sistema de gestión</title>
-    <link rel="stylesheet" href="assets/css/app.css?v=20261120-client-filters-footer" />
+    <link rel="stylesheet" href="assets/css/app.css?v=20261122-account-summary" />
 </head>
 <body>
 
@@ -157,7 +157,7 @@ $display_dashboard = 'none';
         <!-- Controles del Director de Casting -->
         <div style="display: flex; gap: 10px; align-items: center;">
             <!-- Fíjate que aquí llamamos a tu función al soltar una tecla -->
-            <input type="text" id="input-busqueda" placeholder="🔍 Buscar cédula, nombre, tlf..." 
+            <input type="text" id="input-busqueda" autocomplete="off" placeholder="🔍 Buscar cédula, nombre, tlf..."
                    onkeyup="cargarTablaClientes()" 
                    style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 250px;">
             
@@ -195,7 +195,7 @@ $display_dashboard = 'none';
             <div id="paginacion-clientes" class="pagination-controls"></div>
         </div>
 
-        <form id="form-cliente" class="modo-lateral" style="display:none;" onsubmit="procesarFormulario(event, 'api/registrar_cliente.php', (res) => { 
+        <form id="form-cliente" class="modo-lateral" autocomplete="off" style="display:none;" onsubmit="procesarFormulario(event, 'api/registrar_cliente.php', (res) => {
             alert('¡Cliente registrado!'); 
             cargarTablaClientes(); /* Recarga la tabla mágicamente */
             document.getElementById('form-cliente').reset();
@@ -211,7 +211,7 @@ $display_dashboard = 'none';
                     <option value="G">G</option>
                     <option value="P">P</option>
                 </select>
-                <input type="text" inputmode="numeric" name="ci" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required />
+                <input type="text" inputmode="numeric" name="ci" autocomplete="off" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required />
             </div>
             <div class="input-group-row">
                 <input type="text" name="nombres" placeholder="Nombres" required />
@@ -239,7 +239,7 @@ $display_dashboard = 'none';
         <!-- Controles de Auditoría para Pagos -->
         <div style="display: flex; gap: 10px; align-items: center;">
             <!-- Llamamos a la función al soltar la tecla -->
-            <input type="text" id="input-busqueda-pagos" placeholder="🔍 Buscar ref, cédula o nombre..." 
+            <input type="text" id="input-busqueda-pagos" autocomplete="off" placeholder="🔍 Buscar ref, cédula o nombre..."
                    onkeyup="cargarTablaPagos()" 
                    style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 250px;">
             <input type="date" id="filtro-pago-desde" onchange="cargarTablaPagos()" aria-label="Desde">
@@ -276,7 +276,7 @@ $display_dashboard = 'none';
         </div>
 
         <div id="addpay" class="modo-lateral" style="display:none;">
-            <form id="payform" onsubmit="procesarFormulario(event, 'api/registrar_pago.php', (res) => { 
+            <form id="payform" autocomplete="off" onsubmit="procesarFormulario(event, 'api/registrar_pago.php', (res) => {
                 alert('¡Transacción procesada con éxito!'); 
                 cargarTablaPagos(); /* Recargamos la tabla al instante */
                 document.getElementById('payform').reset();
@@ -300,7 +300,7 @@ $display_dashboard = 'none';
                         <option value="G">G</option>
                         <option value="P">P</option>
                     </select>
-                    <input type="text" inputmode="numeric" name="cedula_identidad" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required />
+                    <input type="text" inputmode="numeric" name="cedula_identidad" autocomplete="off" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required />
                 </div>
 
                 <div class="input-group-row">
@@ -314,7 +314,7 @@ $display_dashboard = 'none';
                             <option value="0426">0426</option>
                         </optgroup>
                     </select>
-                    <input type="text" inputmode="numeric" name="telefono" placeholder="7 dígitos" pattern="[0-9]{7}" minlength="7" maxlength="7" required />
+                    <input type="text" inputmode="numeric" name="telefono" autocomplete="off" placeholder="7 dígitos" pattern="[0-9]{7}" minlength="7" maxlength="7" required />
                 </div>
                 
                 <div class="input-group">
@@ -338,7 +338,7 @@ $display_dashboard = 'none';
                 <p id="tasa-bcv-pago" class="full-width" role="status"></p>
 
                 <div class="input-group full-width" id="contenedor-dinamico" style="display: none;">
-                    <input type="text" id="input-dinamico" name="reference" placeholder="" />
+                    <input type="text" id="input-dinamico" name="reference" autocomplete="off" placeholder="" />
                 </div>
                 
                 <input type="submit" value="Procesar Transacción" class="full-width" />
@@ -477,7 +477,18 @@ $display_dashboard = 'none';
 </section>
 <section id="vista-cuenta" class="config-card account-view" style="display:none;">
     <h2>Mi cuenta</h2>
-    <form id="form-perfil-operador" onsubmit="guardarPerfilOperador(event)">
+    <dl class="account-details">
+        <div><dt>Nombres</dt><dd id="perfil-operador-nombres"></dd></div>
+        <div><dt>Apellidos</dt><dd id="perfil-operador-apellidos"></dd></div>
+        <div><dt>Cédula</dt><dd id="perfil-operador-ci"></dd></div>
+        <div><dt>Dirección</dt><dd id="perfil-operador-direccion"></dd></div>
+        <div><dt>Usuario</dt><dd id="perfil-operador-username"></dd></div>
+        <div><dt>Rol</dt><dd id="perfil-operador-rol"></dd></div>
+        <div><dt>Estado</dt><dd id="perfil-operador-estado"></dd></div>
+        <div><dt>Vacaciones</dt><dd id="perfil-operador-vacaciones"></dd></div>
+    </dl>
+    <p class="account-email-status" role="status">Correo: <strong id="estado-verificacion-correo"></strong></p>
+    <form id="form-perfil-operador" autocomplete="off" onsubmit="guardarPerfilOperador(event)">
         <label>Correo
             <input type="email" name="contacto" maxlength="254" required>
         </label>
@@ -485,6 +496,12 @@ $display_dashboard = 'none';
             <input type="tel" name="tlf" pattern="04[0-9]{2}-?[0-9]{7}" maxlength="12" required>
         </label>
         <button type="submit" class="btn-nuevo">Guardar mis datos</button>
+    </form>
+    <form id="form-cambio-clave" class="account-password-reset" autocomplete="off" onsubmit="solicitarCambioClave(event)">
+        <input type="hidden" name="username">
+        <p>Para cambiar tu clave, te enviaremos un enlace de un solo uso al correo verificado de tu cuenta. La clave actual nunca se muestra.</p>
+        <button type="submit" class="btn-nuevo">Enviar enlace para cambiar clave</button>
+        <p id="estado-cambio-clave" role="status" hidden></p>
     </form>
 </section>
 <section id="vista-soporte" class="config-card support-view" style="display:none;">
@@ -525,7 +542,7 @@ $display_dashboard = 'none';
                 <p style="margin: 0; grid-column: 1 / -1;"><strong>Dirección:</strong> <span id="perfil-direccion" style="color: #475569;"></span></p>
             </div>
 
-            <form id="form-editar-cliente" class="config-card" style="display:none;" onsubmit="guardarEdicionCliente(event)">
+            <form id="form-editar-cliente" class="config-card" autocomplete="off" style="display:none;" onsubmit="guardarEdicionCliente(event)">
                 <input type="hidden" name="id">
                 <div class="input-group-row">
                     <select name="tipo_documento">
@@ -536,7 +553,7 @@ $display_dashboard = 'none';
                         <option value="G">G</option>
                         <option value="P">P</option>
                     </select>
-                    <input type="text" inputmode="numeric" name="ci" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required>
+                    <input type="text" inputmode="numeric" name="ci" autocomplete="off" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required>
                 </div>
                 <input type="text" name="nombres" placeholder="Nombres" required>
                 <input type="text" name="apellidos" placeholder="Apellidos">
@@ -574,6 +591,6 @@ $display_dashboard = 'none';
         </div>
     </div>
 
-    <script src="assets/js/lg.js?v=20261120-configuracion-ti"></script>
+    <script src="assets/js/lg.js?v=20261122-account-summary"></script>
 </body>
 </html>

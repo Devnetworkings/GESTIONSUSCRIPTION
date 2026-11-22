@@ -742,6 +742,48 @@ body {
     gap: 6px;
 }
 
+.account-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px 20px;
+    margin: 0 0 18px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-muted);
+}
+
+.account-details dt {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.account-details dd {
+    margin: 5px 0 0;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.account-email-status {
+    color: var(--text-muted);
+}
+
+.account-password-reset {
+    align-items: center;
+    margin-top: 20px;
+}
+
+.account-password-reset p {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--text-muted);
+}
+
+#estado-cambio-clave[hidden] {
+    display: none;
+}
+
 #tabla-auditoria td:last-child {
     min-width: 260px;
     max-width: 420px;
@@ -1249,6 +1291,26 @@ body[data-theme="dark"] #loginpage::after {
 .dashboard-summary .summary-filter.is-active {
     border-color: var(--accent);
     background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+body:not([data-theme="dark"]) .dashboard-summary .summary-filter.is-active {
+    border: 2px solid #0284c7;
+    background: color-mix(in srgb, #38bdf8 24%, var(--surface));
+    box-shadow: inset 0 0 0 1px rgba(2, 132, 199, 0.12), 0 0 0 3px rgba(2, 132, 199, 0.12), 0 8px 22px rgba(8, 47, 73, 0.14);
+}
+
+body:not([data-theme="dark"]) .dashboard-summary .summary-filter.is-active::before {
+    width: 8px;
+    background: #0284c7;
+}
+
+body:not([data-theme="dark"]) .dashboard-summary .summary-filter.is-active strong {
+    color: #0369a1;
+}
+
+body:not([data-theme="dark"]) .dashboard-summary .summary-filter.is-active span {
+    color: var(--text);
+    font-weight: 700;
 }
 
 .tabs-navigation {
