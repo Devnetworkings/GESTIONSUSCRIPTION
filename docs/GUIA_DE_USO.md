@@ -155,6 +155,15 @@ El control del encabezado alterna entre tema claro y oscuro. La selección se gu
 
 ## Mantenimiento
 
+- El código y el esquema de base se despliegan por separado. Antes de subir cambios PHP/API, revisa si requieren tablas o columnas nuevas y comunica el SQL necesario; `database/schema.sql` instala bases vacías, pero no altera tablas existentes.
+- En bases existentes que aún no tienen el bloqueo de acceso, ejecuta una sola vez:
+
+```sql
+ALTER TABLE `operator`
+    ADD COLUMN `login_failed_attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    ADD COLUMN `login_locked_until` DATETIME NULL;
+```
+
 - Antes de reinstalar o reemplazar la base, exporta una copia de seguridad; importar `database/schema.sql` crea el esquema, pero no conserva los datos existentes.
 - `database/schema.sql` es el único esquema mantenido para instalaciones nuevas. No se incluyen migraciones para actualizar bases de versiones anteriores.
 - No guardes contraseñas de base de datos o de correo en el repositorio.
