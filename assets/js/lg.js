@@ -1565,50 +1565,40 @@ document.addEventListener('DOMContentLoaded', () => {
     establecerTemaUsuario('');
     document.getElementById('theme-toggle')?.addEventListener('click', alternarTema);
 
-    // Verificamos si el actor tiene su pase VIP en esta pestaña específica
-    if (!sessionStorage.getItem('sesion_activa')) {
-        fetchConCsrf('api/logout.php', { method: 'POST' }).catch(error => console.error('No se pudo limpiar la sesión del servidor:', error));
-        toggleLogin('login');
-    } else {
-        // Si recargó, verificamos con PHP
-        fetch('api/check_session.php')
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // ¡ENCENDEMOS LAS LUCES DEL SET!
-                    const loginPage = document.getElementById('loginpage');
-                    const dashboard = document.getElementById('dashboard');
-                    const nombreActor = document.getElementById('nombre-actor');
+    fetch('api/check_session.php')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const loginPage = document.getElementById('loginpage');
+                const dashboard = document.getElementById('dashboard');
+                const nombreActor = document.getElementById('nombre-actor');
 
-                    if (loginPage) loginPage.style.display = 'none';
-                    if (dashboard) dashboard.style.display = 'block';
-                    establecerTemaUsuario(data.operador);
-                    moverControlTema(true);
+                if (loginPage) loginPage.style.display = 'none';
+                if (dashboard) dashboard.style.display = 'block';
+                sessionStorage.setItem('sesion_activa', 'true');
+                establecerTemaUsuario(data.operador);
+                moverControlTema(true);
 
-                    // ¡AQUÍ ESTÁ EL CORTE DEL DIRECTOR! Priorizamos la memoria local
-                    if (nombreActor) {
-                        const actorGuardado = sessionStorage.getItem('actorVIP');
-                        nombreActor.innerText = actorGuardado ? actorGuardado.toUpperCase() : (data.operador ? data.operador.toUpperCase() : 'SISTEMA');
-                    }
-                    const role = data.role || 'operador';
-                    sessionStorage.setItem('operador_role', role);
-                    configurarPestanasRol(role);
-
-                    // Cargamos la tabla principal
-                    cargarVista('clientes');
-                    cargarResumenDashboard();
-                } else {
-                    sessionStorage.removeItem('sesion_activa');
-                    moverControlTema(false);
-                    toggleLogin('login');
+                if (nombreActor) {
+                    const actorGuardado = sessionStorage.getItem('actorVIP');
+                    nombreActor.innerText = actorGuardado ? actorGuardado.toUpperCase() : (data.operador ? data.operador.toUpperCase() : 'SISTEMA');
                 }
-            })
-            .catch(error => {
-                console.error("Error validando el pase VIP:", error);
+                const role = data.role || 'operador';
+                sessionStorage.setItem('operador_role', role);
+                configurarPestanasRol(role);
+                cargarVista('clientes');
+                cargarResumenDashboard();
+            } else {
+                sessionStorage.removeItem('sesion_activa');
                 moverControlTema(false);
                 toggleLogin('login');
-            });
-    }
+            }
+        })
+        .catch(error => {
+            console.error('Error validando la sesión:', error);
+            moverControlTema(false);
+            toggleLogin('login');
+        });
 });
 
 async function cerrarSesionEscenario() {

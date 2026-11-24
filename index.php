@@ -585,6 +585,6 @@ $display_dashboard = 'none';
         </div>
     </div>
 
-    <script src="assets/js/lg.js?v=20261124-csrf-post-fallback"></script>
+    <script src="assets/js/lg.js?v=20261124-csrf-session-check"></script>
 </body>
 </html>
