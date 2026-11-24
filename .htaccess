@@ -1,7 +1,7 @@
 DirectoryIndex index.php
 Options -Indexes
 
-<FilesMatch "^(\.env|\.setup-enabled|\.setup-progress)">
+<FilesMatch "^\.env">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

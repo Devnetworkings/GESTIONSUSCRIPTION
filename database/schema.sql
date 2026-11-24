@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `app_settings` (`setting_key`, `setting_value`)
-VALUES ('dias_aviso_vencimiento', '7'), ('setup_completed', '0')
+VALUES ('dias_aviso_vencimiento', '7')
 ON DUPLICATE KEY UPDATE `setting_key` = VALUES(`setting_key`);
 
 INSERT INTO `planes` (`nombre`, `duracion_meses`, `precio`, `activo`, `coin`)

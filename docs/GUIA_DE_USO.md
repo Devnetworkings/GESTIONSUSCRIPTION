@@ -2,17 +2,29 @@
 
 ## Instalación nueva y configuración
 
-1. Crea una base MySQL/MariaDB vacía en Laragon/phpMyAdmin o en el panel del hosting. El asistente no crea la base, solo las tablas dentro de ella.
-2. Ejecuta `composer install --no-dev --optimize-autoloader`.
-3. Abre la aplicación. Cuando no exista una instalación configurada, el sistema redirige automáticamente a `/setup/`. Ingresa los datos de conexión, la URL pública y los datos requeridos del administrador inicial.
-4. El asistente prueba la conexión, crea el esquema completo de la versión actual, crea el plan **Básico** a 15 USD y registra al primer administrador. Guarda la conexión en `.env` y elimina el archivo de habilitación.
-5. Inicia sesión. Si usarás recuperación de contraseña o verificación de correo, configura SMTP en `.env` y vuelve a enviar el enlace de verificación del correo del administrador.
+1. Crea una base MySQL/MariaDB vacía en Laragon/phpMyAdmin o en el panel del hosting.
+2. Importa `database/schema.sql` en esa base.
+3. Configura las credenciales mediante variables del hosting, `.env` basado en `.env.example` o `includes/conexion.prod.php`.
+4. Ejecuta `composer install --no-dev --optimize-autoloader` localmente y sube `vendor/` junto con la aplicación.
+5. Mantén el sitio privado, abre el acceso y registra al primer operador; esa cuenta recibe el rol de administrador.
+6. Si usarás recuperación de contraseña o verificación de correo, configura SMTP y envía el enlace de verificación al administrador.
 
-El asistente solo acepta una base vacía y bloquea la instalación si detecta `.env`, `includes/conexion.prod.php` o tablas de la aplicación en la base configurada. Después de instalar, `/setup/` solo puede ser accedido por una cuenta activa con rol **Soporte de TI**. No debe usarse para actualizar una instalación existente. Si prefieres instalar manualmente, copia `.env.example` a `.env`, completa los datos y carga `database/schema.sql` en una base vacía. Luego registra el primer operador desde el acceso mientras el sitio aún no sea público; el primero obtiene rol administrador.
+Para configurar la base manualmente sin `.env`, crea `includes/conexion.prod.php` con las credenciales que proporciona el hosting:
 
-El archivo `.env` se carga con phpdotenv al iniciar PHP, se excluye de Git y el `.htaccess` del proyecto bloquea su descarga. En Nginx, añade también una regla como `location ~ /\.(?!well-known).* { deny all; }`. No publiques credenciales ni expongas archivos temporales de instalación.
+```php
+<?php
+$pdo = new PDO(
+    'mysql:host=DB_HOST;port=3306;dbname=DB_NAME;charset=utf8mb4',
+    'DB_USER',
+    'DB_PASSWORD',
+    [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_EMULATE_PREPARES => true,
+    ]
+);
+```
 
-La configuración antigua sigue disponible: las variables de entorno del servidor funcionan sin `.env`, y `includes/conexion.prod.php` conserva prioridad en producción. Si ya hay un `.env`, `conexion.prod.php` o variables de servidor configurados, no uses el asistente para sobrescribirlos; conserva el método existente.
+Reemplaza los valores de ejemplo por los datos del hosting. El archivo está excluido de Git; Apache bloquea su acceso directo mediante `includes/.htaccess`. En Nginx, bloquea el acceso web a `includes/`. No publiques ni compartas las credenciales. Si usas `.env`, el lector PHP integrado lo carga sin dependencias de Composer. En Nginx, bloquea también los archivos ocultos, por ejemplo `location ~ /\.(?!well-known).* { deny all; }`.
 
 `.env` contempla:
 
@@ -24,7 +36,7 @@ La configuración antigua sigue disponible: las variables de entorno del servido
 
 ## Acceso y roles
 
-Inicia sesión con el usuario y contraseña de tu cuenta. En una instalación con asistente, usa la cuenta de administrador creada durante el setup. En la instalación manual, la primera persona que se registra crea su cuenta de administrador; no hay contraseña predeterminada compartida. Si la base ya contiene operadores, un responsable debe comprobar que exista al menos un administrador activo antes de habilitar el acceso.
+Inicia sesión con el usuario y contraseña de tu cuenta. La primera persona que se registra crea la cuenta de administrador; no hay contraseña predeterminada compartida. Si la base ya contiene operadores, un responsable debe comprobar que exista al menos un administrador activo antes de habilitar el acceso.
 
 **Operador** puede consultar y gestionar clientes y pagos. Cada cuenta activa puede actualizar su propio correo y teléfono en **Mi cuenta**. **Admin** tiene las facultades de operador y además administra operadores, planes, tasa, avisos y reportes financieros; puede corregir los demás datos de las cuentas. **Soporte de TI** puede consultar clientes y pagos en modo de solo lectura, ver el historial de auditoría y editar la configuración técnica cuando el servidor permite hacerlo. No puede crear ni modificar clientes o pagos ni administrar roles, estados, planes o reportes financieros.
 
@@ -79,7 +91,7 @@ La aplicación consulta `https://www.bcv.org.ve/` desde el servidor, lee el valo
 - Sin tasa oficial válida del día o tasa manual, se bloquean nuevos pagos en VES. Los pagos en USD siguen disponibles.
 - Cada nuevo pago guarda el precio del plan en USD, el monto efectivamente cobrado y, cuando fue en VES, la tasa y Fecha Valor utilizadas. El expediente y el historial financiero muestran esos datos.
 
-Los pagos anteriores a la migración se conservan con su moneda y monto originales. No se inventa ni recalcula una tasa retroactiva para pagos históricos en VES.
+Los pagos se conservan con su moneda y monto originales. No se inventa ni recalcula una tasa retroactiva para pagos históricos en VES.
 
 ## Configuración administrativa
 
@@ -97,13 +109,13 @@ Desde **Configuración**, el administrador puede:
 
 El historial de actividad registra inicios y cierres de sesión, cambios de cuentas, clientes, pagos y configuración. No guarda contraseñas, tokens ni secretos. Solo las cuentas con rol **Soporte de TI** pueden consultarlo.
 
-La pestaña **Configuración técnica** solo se muestra a Soporte de TI cuando los ajustes pueden editarse desde el panel. Si la conexión se administra con `includes/conexion.prod.php` o con variables externas, el panel no muestra esa pestaña; esos valores se cambian desde el servidor. El endpoint vuelve a validar el rol y exige token CSRF y contraseña actual al guardar. El asistente inicial `/setup/` es independiente y tiene su propio token CSRF.
+La pestaña **Configuración técnica** solo se muestra a Soporte de TI cuando los ajustes pueden editarse desde el panel. Si la conexión se administra con `includes/conexion.prod.php` o con variables externas, el panel no muestra esa pestaña; esos valores se cambian desde el servidor. El endpoint vuelve a validar el rol y exige token CSRF y contraseña actual al guardar.
 
 ### Recuperar contraseña y verificar correo
 
 En el inicio de sesión, selecciona **Olvidé mi contraseña**, escribe tu usuario y abre el enlace que llegue al correo verificado. El enlace de recuperación vence en una hora y solo se puede usar una vez. Si el correo todavía no está verificado, un administrador debe enviar el enlace desde **Configuración** y el operador debe confirmarlo primero.
 
-Después de tres contraseñas incorrectas consecutivas, la cuenta queda bloqueada durante 15 minutos. Un inicio de sesión correcto reinicia el contador. Si necesitas entrar antes, solicita el cambio de contraseña con **Olvidé mi contraseña**; al establecer una nueva clave se elimina el bloqueo. En una instalación existente, aplica `database/migrations/database_migration_bloqueo_acceso.sql` una sola vez; una instalación nueva ya crea estas columnas.
+Después de tres contraseñas incorrectas consecutivas, la cuenta queda bloqueada durante 15 minutos. Un inicio de sesión correcto reinicia el contador. Si necesitas entrar antes, solicita el cambio de contraseña con **Olvidé mi contraseña**; al establecer una nueva clave se elimina el bloqueo. El esquema actual crea las columnas necesarias.
 
 El envío usa PHPMailer por SMTP. Composer instala la biblioteca con `composer install --no-dev --optimize-autoloader`; en servidores de producción, incluye `vendor/` o ejecuta Composer durante el despliegue. Una opción sin costo para comenzar es Gmail SMTP, sujeto a los límites de envío de Google:
 
@@ -143,8 +155,7 @@ El control del encabezado alterna entre tema claro y oscuro. La selección se gu
 
 ## Mantenimiento
 
-- Haz una copia de seguridad antes de ejecutar migraciones o cambios en el servidor.
-- No vuelvas a aplicar migraciones ya ejecutadas: no todas las operaciones de alteración de columnas son repetibles.
-- Antes de ejecutar `database/migrations/database_migration_bcv.sql`, exporta una copia de seguridad: la migración reemplaza el catálogo anterior por el plan inicial Básico, conserva snapshots de los planes asociados a pagos existentes y no debe repetirse.
+- Antes de reinstalar o reemplazar la base, exporta una copia de seguridad; importar `database/schema.sql` crea el esquema, pero no conserva los datos existentes.
+- `database/schema.sql` es el único esquema mantenido para instalaciones nuevas. No se incluyen migraciones para actualizar bases de versiones anteriores.
 - No guardes contraseñas de base de datos o de correo en el repositorio.
 - Si los datos no cargan, revisa la conexión MySQL configurada en `includes/conexion.php` y los registros de errores de PHP. Si el resumen de tarjetas falla, la interfaz muestra un aviso y la causa técnica queda en el registro de PHP.

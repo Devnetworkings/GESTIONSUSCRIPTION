@@ -11,11 +11,9 @@ $cargadorComposer = $raizAplicacion . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY
 if (is_file($cargadorComposer)) {
     require_once $cargadorComposer;
 }
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'env_loader.php';
 if (is_file($archivoEntorno)) {
-    if (!class_exists(\Dotenv\Dotenv::class)) {
-        throw new RuntimeException('Instala las dependencias con composer install para cargar .env.');
-    }
-    \Dotenv\Dotenv::createUnsafeImmutable($raizAplicacion)->safeLoad();
+    gggLoadEnvFile($archivoEntorno);
 }
 
 date_default_timezone_set('America/Caracas');

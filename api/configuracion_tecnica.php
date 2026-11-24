@@ -43,22 +43,11 @@ function gggTecnicaPostString(string $name, bool $trim = true): string
 
 function gggTecnicaReadEnv(string $path): array
 {
-    if (!is_file($path)) {
-        return [];
-    }
-    $contents = file_get_contents($path);
-    if ($contents === false) {
-        throw new RuntimeException('No se pudo leer el archivo .env.');
-    }
-    if (!class_exists(\Dotenv\Dotenv::class)) {
-        throw new RuntimeException('Instala las dependencias con composer install para editar .env.');
-    }
-
     try {
-        return \Dotenv\Dotenv::parse($contents);
+        return gggReadEnvFile($path);
     } catch (Throwable $e) {
-        error_log('Could not parse .env for technical configuration: ' . $e->getMessage());
-        throw new RuntimeException('No se pudo interpretar .env. Corrige el archivo manualmente antes de continuar.');
+        error_log('Could not read .env for technical configuration: ' . $e->getMessage());
+        throw new RuntimeException('No se pudo interpretar .env. Corrige el archivo manualmente antes de continuar.', 0, $e);
     }
 }
 

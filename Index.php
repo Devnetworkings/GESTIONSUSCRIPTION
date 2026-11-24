@@ -1,13 +1,7 @@
 <?php
 
 require_once __DIR__ . '/includes/entorno.php';
-require_once __DIR__ . '/includes/estado_instalacion.php';
 session_start();
-
-if (gggInstallationIsClean()) {
-    header('Location: setup/', true, 302);
-    exit;
-}
 
 require_once __DIR__ . '/includes/csrf.php';
 $csrfToken = gggCsrfToken();

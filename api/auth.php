@@ -80,6 +80,6 @@ try {
     ob_clean();
     echo json_encode([
         'success' => false,
-        'message' => 'No se pudo completar el inicio de sesión. Verifica la conexión y las migraciones de la base de datos.'
+        'message' => 'No se pudo completar el inicio de sesión. Verifica la conexión y que la base tenga el esquema actual.'
     ]);
 }
