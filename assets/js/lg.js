@@ -15,6 +15,10 @@ function fetchConCsrf(url, options = {}) {
         return Promise.reject(new Error('No se pudo validar la sesión. Recarga la página.'));
     }
 
+    if (options.body instanceof FormData && !options.body.has('csrf_token')) {
+        options.body.append('csrf_token', token);
+    }
+
     const headers = new Headers(options.headers || {});
     headers.set('X-CSRF-Token', token);
     return fetch(url, { ...options, headers });
