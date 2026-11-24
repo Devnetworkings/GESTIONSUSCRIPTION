@@ -38,13 +38,13 @@ Aplicación web en PHP y MySQL para administrar clientes de un gimnasio, membres
 ## Cambios frente a la versión anterior
 
 - Los planes ahora se administran desde la aplicación con nombre y precio en USD; conservan duración mensual fija, en lugar de depender de un catálogo estático en una sola moneda.
-- Los pagos en bolívares usan la tasa USD/VES publicada por el BCV, y guardan en el pago la tasa, la Fecha Valor y el precio base en USD para conservar el cálculo histórico. También se puede fijar la tasa manualmente cuando la tasa oficial vigente no está disponible.
+- Los pagos en bolívares usan la tasa USD/VES publicada por el BCV; todos los pagos conservan la tasa y Fecha Valor disponibles al registrarse, junto con el precio base en USD, para mantener el contexto histórico. También se puede fijar la tasa manualmente cuando la tasa oficial vigente no está disponible.
 - El resumen financiero ahora se descarga como un libro `.xlsx` detallado: incluye cada pago con cliente y operador, totales diarios, un balance que mantiene las monedas separadas y gráficos legibles.
 - La guía de uso describe la instalación manual, los permisos, el flujo BCV y la exportación actualizados.
 
 ## Documentación
 
-Consulta la [guía de uso y operación](docs/GUIA_DE_USO.md) para conocer los estados de clientes, los flujos de pagos, la tasa BCV, la exportación de ingresos, los permisos y recomendaciones de operación.
+Consulta la [guía de uso y operación](docs/GUIA_DE_USO.md) para conocer los estados de clientes, los flujos de pagos, la tasa BCV, la exportación de ingresos, los permisos y recomendaciones de operación. El [diagrama entidad-relación](docs/DIAGRAMA_ER.md) muestra las tablas y sus asociaciones; también puedes [abrir o descargar la imagen SVG](diagrama-er.svg).
 
 ## Estructura del proyecto
 

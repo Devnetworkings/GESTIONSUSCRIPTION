@@ -255,12 +255,14 @@ $display_dashboard = 'none';
                 <thead>
                     <tr>
                         <th>Cliente</th>
+                        <th>Fecha efectiva</th>
                         <th>Referencia / Serie</th>
                         <th>Monto</th>
                         <th>Moneda</th>
                         <th>Tasa BCV</th>
                         <th>Método</th>
-                        <th>Operador</th>
+                        <th class="th-pago-admin">Registro (VET)</th>
+                        <th class="th-pago-admin">Operador</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -274,6 +276,7 @@ $display_dashboard = 'none';
                 alert('¡Transacción procesada con éxito!'); 
                 cargarTablaPagos(); /* Recargamos la tabla al instante */
                 document.getElementById('payform').reset();
+                establecerFechaPagoHoy();
                 adaptarFormularioPago(''); /* Limpiamos el campo dinámico */
             })">
                 <h3>Registrar Nuevo Pago</h3>
@@ -324,6 +327,12 @@ $display_dashboard = 'none';
                     <select name="id_plan" id="pago-plan" required>
                         <option value="">Cargando planes…</option>
                     </select>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>Fecha efectiva del pago
+                        <input type="date" name="fecha_pago" id="fecha-pago" required>
+                    </label>
                 </div>
 
                 <div class="input-group">
@@ -569,12 +578,13 @@ $display_dashboard = 'none';
             <table class="celtable" id="tabla-perfil-pagos" style="width: 100%; border-collapse: collapse;">
                 <thead style="background-color: #f1f5f9;">
                     <tr>
-                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Fecha</th>
+                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Fecha efectiva</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Referencia</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Monto</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Tasa BCV</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Método</th>
-                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Operador</th>
+                        <th class="th-perfil-pago-admin" style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Registro (VET)</th>
+                        <th class="th-perfil-pago-admin" style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Operador</th>
                     </tr>
                 </thead>
                 <tbody></tbody>

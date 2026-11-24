@@ -253,7 +253,7 @@ try {
                COUNT(*) AS cantidad, SUM(p.monto) AS total
         FROM pagos p
         LEFT JOIN operator o ON p.id_operador = o.id
-        WHERE p.fecha >= ? AND p.fecha < DATE_ADD(?, INTERVAL 1 DAY)
+        WHERE p.fecha_pago >= ? AND p.fecha_pago <= ?
         GROUP BY p.coin, p.metodo_pago, o.username
         ORDER BY p.coin, p.metodo_pago, o.username
     ");
@@ -267,7 +267,7 @@ try {
     }
 
     $stmt = $pdo->prepare("
-        SELECT p.id AS pago_id, p.fecha,
+        SELECT p.id AS pago_id, p.fecha_pago, p.fecha_registro,
                CASE WHEN c.tipo_documento IS NULL OR c.tipo_documento = '' THEN c.ci ELSE CONCAT(c.tipo_documento, '-', c.ci) END AS ci,
                c.tlf AS telefono_cliente, c.email AS email_cliente,
                TRIM(CONCAT(COALESCE(c.nombres, ''), ' ', COALESCE(c.apellidos, ''))) AS cliente,
@@ -280,18 +280,18 @@ try {
         LEFT JOIN clientes c ON p.id_cliente = c.id
         LEFT JOIN planes pl ON p.id_plan = pl.id
         LEFT JOIN operator o ON p.id_operador = o.id
-        WHERE p.fecha >= ? AND p.fecha < DATE_ADD(?, INTERVAL 1 DAY)
-        ORDER BY p.fecha, p.id
+        WHERE p.fecha_pago >= ? AND p.fecha_pago <= ?
+        ORDER BY p.fecha_registro, p.id
     ");
     $stmt->execute([$desde, $hasta]);
     $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $stmt = $pdo->prepare("
-        SELECT DATE(p.fecha) AS fecha, p.coin,
+        SELECT p.fecha_pago AS fecha, p.coin,
                COUNT(*) AS cantidad, SUM(p.monto) AS total
         FROM pagos p
-        WHERE p.fecha >= ? AND p.fecha < DATE_ADD(?, INTERVAL 1 DAY)
-        GROUP BY DATE(p.fecha), p.coin
+        WHERE p.fecha_pago >= ? AND p.fecha_pago <= ?
+        GROUP BY p.fecha_pago, p.coin
         ORDER BY fecha, p.coin
     ");
     $stmt->execute([$desde, $hasta]);
@@ -300,7 +300,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT p.coin, COUNT(*) AS cantidad, SUM(p.monto) AS total
         FROM pagos p
-        WHERE p.fecha >= ? AND p.fecha < DATE_ADD(?, INTERVAL 1 DAY)
+        WHERE p.fecha_pago >= ? AND p.fecha_pago <= ?
         GROUP BY p.coin
         ORDER BY p.coin
     ");
@@ -321,12 +321,13 @@ try {
     }
 
     $filasPagos = [
-        ['ID de pago', 'Fecha y hora', 'Cédula', 'Cliente', 'Teléfono', 'Correo', 'Referencia', 'Plan', 'Duración (meses)', 'Monto cobrado', 'Moneda', 'Precio del plan (USD)', 'Tasa BCV (Bs/USD)', 'Fecha valor BCV', 'Método de pago', 'Usuario operador', 'Nombre del operador']
+        ['ID de pago', 'Fecha efectiva', 'Fecha y hora de registro', 'Cédula', 'Cliente', 'Teléfono', 'Correo', 'Referencia', 'Plan', 'Duración (meses)', 'Monto cobrado', 'Moneda', 'Precio del plan (USD)', 'Tasa BCV (Bs/USD)', 'Fecha valor BCV', 'Método de pago', 'Usuario operador', 'Nombre del operador']
     ];
     foreach ($pagos as $pago) {
         $filasPagos[] = [
             $pago['pago_id'],
-            ['value' => $pago['fecha'], 'type' => 'DateTime', 'style' => 4],
+            $pago['fecha_pago'],
+            ['value' => $pago['fecha_registro'], 'type' => 'DateTime', 'style' => 4],
             $pago['ci'] ?? '',
             $pago['cliente'],
             $pago['telefono_cliente'] ?? '',

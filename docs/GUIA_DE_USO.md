@@ -68,7 +68,7 @@ Las tarjetas del dashboard presentan los totales de activos, por vencer, vencido
 
 El catálogo inicial trae el plan **Básico**, pero el administrador puede añadir los planes que necesite, cambiar su nombre y precio, y quitar o reactivar planes. Todos los planes duran siempre un mes y sus precios se administran en USD; no se fija un precio en bolívares.
 
-Al pagar en efectivo divisa, se cobra el precio del plan en USD. Pago móvil y transferencia se cobran en VES, calculando `precio del plan en USD × tasa BCV USD` y redondeando el total a dos decimales. El precio se obtiene del servidor y no se acepta como autoridad un monto enviado por el navegador. Cada pago renueva la membresía por un mes.
+Al pagar en efectivo divisa, se cobra el precio del plan en USD. Pago móvil y transferencia se cobran en VES, calculando `precio del plan en USD × tasa BCV USD` y redondeando el total a dos decimales. Cuando hay una tasa BCV vigente disponible, también se guarda en pagos en USD junto con su Fecha Valor, sin que su indisponibilidad impida registrar pagos en divisas. El precio se obtiene del servidor y no se acepta como autoridad un monto enviado por el navegador. Cada pago renueva la membresía por un mes.
 
 Para registrar un pago:
 

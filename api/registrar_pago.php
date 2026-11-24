@@ -20,6 +20,7 @@ $reference = $_POST['reference'] ?? '';
 $id_plan = (int) ($_POST['id_plan'] ?? 0);
 $codigo_telefono = $_POST['codigo_operadora'] ?? '';
 $telefono_local = $_POST['telefono'] ?? '';
+$fechaPago = trim($_POST['fecha_pago'] ?? '');
 
 $id_operador = $_SESSION['operador_id'];
 $coin = ($metodo_pago === 'divisa') ? 'USD' : 'VES';
@@ -28,6 +29,15 @@ if (empty($cedula_num) || !in_array($metodo_pago, ['pagomovil', 'divisa', 'trans
     || !preg_match('/^04\d{2}$/', $codigo_telefono) || !preg_match('/^\d{7}$/', $telefono_local)) {
     ob_clean();
     echo json_encode(['success' => false, 'message' => 'Faltan campos críticos para procesar el pago.']);
+    exit;
+}
+
+$fechaPagoParseada = DateTime::createFromFormat('!Y-m-d', $fechaPago);
+$hoy = (new DateTime('today'))->format('Y-m-d');
+if (!$fechaPagoParseada || $fechaPagoParseada->format('Y-m-d') !== $fechaPago || $fechaPago > $hoy) {
+    http_response_code(422);
+    ob_clean();
+    echo json_encode(['success' => false, 'message' => 'La fecha efectiva del pago no puede estar vacía ni ser posterior a hoy.']);
     exit;
 }
 
@@ -69,20 +79,19 @@ try {
         echo json_encode(['success' => false, 'message' => 'Configura y selecciona un plan activo antes de registrar el pago.']);
         exit;
     }
-    $tasaBcv = null;
+    $tasaInfoBcv = obtenerTasaBcv($pdo);
+    if (!$tasaInfoBcv['available'] && $coin === 'VES') {
+        http_response_code(422);
+        ob_clean();
+        echo json_encode(['success' => false, 'message' => $tasaInfoBcv['message']]);
+        exit;
+    }
+    $tasaBcv = $tasaInfoBcv['available'] ? $tasaInfoBcv['rate'] : null;
     $montoUsd = (float) $plan['precio'];
     $montoCobrado = $montoUsd;
-    $fechaValorBcv = null;
+    $fechaValorBcv = $tasaInfoBcv['available'] ? $tasaInfoBcv['value_date'] : null;
     if ($coin === 'VES') {
-        $tasaBcv = obtenerTasaBcv($pdo);
-        if (!$tasaBcv['available']) {
-            http_response_code(422);
-            ob_clean();
-            echo json_encode(['success' => false, 'message' => $tasaBcv['message']]);
-            exit;
-        }
-        $montoCobrado = round($montoUsd * (float) $tasaBcv['rate'], 2);
-        $fechaValorBcv = $tasaBcv['value_date'];
+        $montoCobrado = round($montoUsd * (float) $tasaBcv, 2);
     }
 
     $reference = trim($reference);
@@ -115,9 +124,10 @@ try {
         (int) $plan['id'],
         1,
         $montoUsd,
-        $tasaBcv['rate'] ?? null,
+        $tasaBcv,
         $fechaValorBcv,
-        $plan['nombre']
+        $plan['nombre'],
+        $fechaPago
     );
     $nuevoPago->guardar($pdo);
 

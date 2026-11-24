@@ -8,6 +8,36 @@ let usuarioTemaActual = '';
 let tasaBcvPagoActual = null;
 let paginaActualAuditoria = 1;
 let configuracionTecnicaEditable = false;
+let perfilPagosEsAdmin = false;
+
+function establecerFechaPagoHoy() {
+    const input = document.getElementById('fecha-pago');
+    if (!input) return;
+    const partes = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Caracas',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(new Date()).reduce((valores, parte) => {
+        if (parte.type !== 'literal') valores[parte.type] = parte.value;
+        return valores;
+    }, {});
+    const hoy = `${partes.year}-${partes.month}-${partes.day}`;
+    input.max = hoy;
+    input.value = hoy;
+}
+
+function formatearFechaVenezolana(fecha) {
+    const coincidencia = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return coincidencia ? `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]}` : (fecha || 'Sin fecha');
+}
+
+function formatearFechaHoraVenezolana(fecha) {
+    const coincidencia = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    return coincidencia
+        ? `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]} ${coincidencia[4]}:${coincidencia[5]} VET`
+        : 'Sin registro';
+}
 
 function fetchConCsrf(url, options = {}) {
     const token = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -209,6 +239,7 @@ async function procesarFormulario(event, url, callbackExito) {
                                 cargarTablaPagos();
                                 cargarResumenDashboard();
                                 document.getElementById('payform').reset();
+                                establecerFechaPagoHoy();
                                 adaptarFormularioPago('');
                             } else {
                                 alert("El cliente se guardó espectacular, pero hubo un drama con el pago: " + pagoRes.message);
@@ -595,27 +626,32 @@ function cargarTablaPagos(pagina = 1) {
                 alert("Error de dirección: " + data.message);
                 return;
             }
+            const esAdmin = data.es_admin === true;
+            document.querySelectorAll('.th-pago-admin').forEach(th => {
+                th.style.display = esAdmin ? '' : 'none';
+            });
 
             if (data.data.length > 0) {
                 data.data.forEach(pago => {
                     const tr = document.createElement('tr');
 
-                    const fechaAmigable = pago.fecha ? new Date(pago.fecha).toLocaleString('es-VE', {
-                        day: '2-digit', month: '2-digit', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    }) : 'Sin fecha';
+                    const fechaEfectiva = formatearFechaVenezolana(pago.fecha_pago);
+                    const fechaRegistro = formatearFechaHoraVenezolana(pago.fecha_registro);
 
                     const operadorNombre = pago.nombre_operador ? pago.nombre_operador : 'DESCONOCIDO';
 
                     const values = [
                         `${pago.nombres || ''} ${pago.apellidos || ''} (C.I: ${pago.ci || ''})`,
-                        `${pago.reference || ''} — ${fechaAmigable}`,
+                        fechaEfectiva,
+                        pago.reference || '',
                         formatearNumeroVenezolano(pago.monto),
                         pago.coin,
-                        pago.tasa_bcv ? `${formatearNumeroVenezolano(pago.tasa_bcv, 8)} Bs/USD · Fecha valor ${pago.fecha_valor_bcv}` : '—',
-                        pago.metodo_pago || '',
-                        operadorNombre
+                        pago.tasa_bcv ? `${formatearNumeroVenezolano(pago.tasa_bcv, 8)} Bs/USD · Fecha valor ${formatearFechaVenezolana(pago.fecha_valor_bcv)}` : '—',
+                        pago.metodo_pago || ''
                     ];
+                    if (esAdmin) {
+                        values.push(fechaRegistro, operadorNombre);
+                    }
                     values.forEach(value => {
                         const td = document.createElement('td');
                         td.textContent = value ?? '';
@@ -624,7 +660,8 @@ function cargarTablaPagos(pagina = 1) {
                     tbody.appendChild(tr);
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">No hay transacciones que coincidan con la búsqueda.</td></tr>';
+                const columnasVisibles = esAdmin ? 9 : 7;
+                tbody.innerHTML = `<tr><td colspan="${columnasVisibles}" style="text-align:center; padding: 20px;">No hay transacciones que coincidan con la búsqueda.</td></tr>`;
             }
             dibujarPaginacionLista('paginacion-pagos-lista', data.paginas || 1, pagina, cargarTablaPagos);
         })
@@ -741,6 +778,10 @@ async function abrirPerfilCliente(idCliente) {
                 document.getElementById('perfil-vencimiento').innerText = c.fecha_vencimiento || 'Sin registro';
 
                 pagosActualesPerfil = data.pagos;
+                perfilPagosEsAdmin = data.es_admin === true;
+                document.querySelectorAll('.th-perfil-pago-admin').forEach(th => {
+                    th.style.display = perfilPagosEsAdmin ? '' : 'none';
+                });
                 paginaActualPagos = 1;
                 renderizarTablaPagosPerfil();
 
@@ -770,23 +811,26 @@ function renderizarTablaPagosPerfil() {
     const pagosDeEstaPagina = pagosActualesPerfil.slice(inicio, fin);
 
     if (pagosDeEstaPagina.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 15px;">Este talento no tiene pagos registrados.</td></tr>';
+        const columnasVisibles = perfilPagosEsAdmin ? 7 : 5;
+        tbody.innerHTML = `<tr><td colspan="${columnasVisibles}" style="text-align:center; padding: 15px;">Este talento no tiene pagos registrados.</td></tr>`;
     } else {
         pagosDeEstaPagina.forEach(p => {
             const tr = document.createElement('tr');
 
-            const fechaAmigable = new Date(p.fecha).toLocaleString('es-VE', {
-                day: '2-digit', month: '2-digit', year: 'numeric'
-            });
+            const fechaEfectiva = formatearFechaVenezolana(p.fecha_pago);
+            const fechaRegistro = formatearFechaHoraVenezolana(p.fecha_registro);
 
-            [
-                fechaAmigable,
+            const values = [
+                fechaEfectiva,
                 p.reference,
                 `${formatearNumeroVenezolano(p.monto)} ${p.coin}`,
-                p.tasa_bcv ? `${formatearNumeroVenezolano(p.tasa_bcv, 8)} Bs/USD · Fecha valor ${p.fecha_valor_bcv}` : '—',
-                p.metodo_pago || '',
-                p.operador
-            ].forEach(value => {
+                p.tasa_bcv ? `${formatearNumeroVenezolano(p.tasa_bcv, 8)} Bs/USD · Fecha valor ${formatearFechaVenezolana(p.fecha_valor_bcv)}` : '—',
+                p.metodo_pago || ''
+            ];
+            if (perfilPagosEsAdmin) {
+                values.push(fechaRegistro, p.operador || 'DESCONOCIDO');
+            }
+            values.forEach(value => {
                 const td = document.createElement('td');
                 td.textContent = value || '';
                 td.style.padding = '10px';
@@ -1561,6 +1605,7 @@ async function guardarEdicionCliente(event) {
 // --- ⭐ CONTROL MAESTRO DE LA ESCENA (SESIONES Y RECARGAS) ⭐ ---
 
 document.addEventListener('DOMContentLoaded', () => {
+    establecerFechaPagoHoy();
     moverControlTema(false);
     establecerTemaUsuario('');
     document.getElementById('theme-toggle')?.addEventListener('click', alternarTema);

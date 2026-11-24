@@ -7,7 +7,8 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
-requireActiveOperator($pdo);
+$currentOperator = requireActiveOperator($pdo);
+$esAdmin = $currentOperator['operator_role'] === 'admin';
 
 $query = $_GET['q'] ?? '';
 $desde = $_GET['desde'] ?? '';
@@ -19,10 +20,13 @@ $offset = ($pagina - 1) * $por_pagina;
 
 // �Cambiamos a LEFT JOIN para que no desaparezcan pagos hu�rfanos!
 $cedulaCompleta = "CASE WHEN c.tipo_documento IS NULL OR c.tipo_documento = '' THEN c.ci ELSE CONCAT(c.tipo_documento, '-', c.ci) END";
-$sql = "SELECT p.id, p.reference, p.monto, p.coin, p.fecha, p.metodo_pago, p.id_plan,
+$sql = "SELECT p.id, p.reference, p.monto, p.coin, p.fecha_pago, p.metodo_pago, p.id_plan,
                p.tasa_bcv, p.fecha_valor_bcv,
-               $cedulaCompleta AS ci, c.nombres, c.apellidos, 
-               o.username AS nombre_operador
+               $cedulaCompleta AS ci, c.nombres, c.apellidos";
+if ($esAdmin) {
+    $sql .= ', p.fecha_registro, o.username AS nombre_operador';
+}
+$sql .= "
         FROM pagos p 
         LEFT JOIN clientes c ON p.id_cliente = c.id 
         LEFT JOIN operator o ON p.id_operador = o.id 
@@ -44,11 +48,11 @@ if (!empty($query)) {
 }
 
 if ($desde !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
-    $sql .= ' AND p.fecha >= :desde';
+    $sql .= ' AND p.fecha_pago >= :desde';
     $params['desde'] = $desde;
 }
 if ($hasta !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
-    $sql .= ' AND p.fecha < DATE_ADD(:hasta, INTERVAL 1 DAY)';
+    $sql .= ' AND p.fecha_pago <= :hasta';
     $params['hasta'] = $hasta;
 }
 if (($desde !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) || ($hasta !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta))) {
@@ -69,7 +73,7 @@ if (in_array($metodo, ['pagomovil', 'divisa', 'transferencia'], true)) {
 }
 
 $sqlTotal = 'SELECT COUNT(*) ' . substr($sql, strpos($sql, 'FROM pagos p'));
-$sql .= ' ORDER BY p.fecha DESC LIMIT :limite OFFSET :offset';
+$sql .= ' ORDER BY p.fecha_registro DESC, p.id DESC LIMIT :limite OFFSET :offset';
 
 try {
     $stmtTotal = $pdo->prepare($sqlTotal);
@@ -84,7 +88,7 @@ try {
     $stmt->execute();
     $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
     ob_clean();
-    echo json_encode(['success' => true, 'data' => $resultados, 'pagina' => $pagina, 'por_pagina' => $por_pagina, 'total' => $total, 'paginas' => (int) ceil($total / $por_pagina)]);
+    echo json_encode(['success' => true, 'es_admin' => $esAdmin, 'data' => $resultados, 'pagina' => $pagina, 'por_pagina' => $por_pagina, 'total' => $total, 'paginas' => (int) ceil($total / $por_pagina)]);
 } catch (PDOException $e) {
     ob_clean();
     echo json_encode(['success' => false, 'message' => 'Error en el set de pagos: ' . $e->getMessage()]);

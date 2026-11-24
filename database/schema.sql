@@ -56,7 +56,8 @@ CREATE TABLE IF NOT EXISTS `pagos` (
     `monto` DECIMAL(12,2) NOT NULL,
     `coin` CHAR(3) NOT NULL,
     `id_operador` CHAR(36) NOT NULL,
-    `fecha` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `fecha_pago` DATE NOT NULL,
+    `fecha_registro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `metodo_pago` VARCHAR(30) NOT NULL DEFAULT 'no_especificado',
     `id_plan` INT NULL,
     `monto_usd` DECIMAL(12,2) NULL,
@@ -66,9 +67,9 @@ CREATE TABLE IF NOT EXISTS `pagos` (
     `plan_duracion_meses_snapshot` SMALLINT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_pagos_reference` (`reference`),
-    KEY `idx_pagos_fecha` (`fecha`),
-    KEY `idx_pagos_cliente_fecha` (`id_cliente`, `fecha`),
-    KEY `idx_pagos_operador_fecha` (`id_operador`, `fecha`),
+    KEY `idx_pagos_fecha_pago` (`fecha_pago`),
+    KEY `idx_pagos_cliente_fecha_pago` (`id_cliente`, `fecha_pago`),
+    KEY `idx_pagos_operador_fecha_pago` (`id_operador`, `fecha_pago`),
     KEY `idx_pagos_plan` (`id_plan`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

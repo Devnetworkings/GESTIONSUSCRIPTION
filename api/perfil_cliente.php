@@ -6,7 +6,8 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
-requireActiveOperator($pdo);
+$currentOperator = requireActiveOperator($pdo);
+$esAdmin = $currentOperator['operator_role'] === 'admin';
 
 $id_cliente = $_GET['id'] ?? '';
 
@@ -42,19 +43,20 @@ try {
 
     // 2. Buscamos todas sus escenas de acci�n (pagos)
     $stmt_pagos = $pdo->prepare("
-        SELECT p.reference, p.monto, p.coin, p.metodo_pago, p.fecha,
-               p.tasa_bcv, p.fecha_valor_bcv, o.username as operador
+        SELECT p.reference, p.monto, p.coin, p.metodo_pago, p.fecha_pago,
+               p.tasa_bcv, p.fecha_valor_bcv
+               " . ($esAdmin ? ", p.fecha_registro, o.username AS operador" : "") . "
         FROM pagos p
         JOIN operator o ON p.id_operador = o.id
         WHERE p.id_cliente = ?
-        ORDER BY p.fecha DESC
+        ORDER BY p.fecha_registro DESC
     ");
     $stmt_pagos->execute([$id_cliente]);
     $pagos = $stmt_pagos->fetchAll(PDO::FETCH_ASSOC);
 
     ob_clean();
     // Enviamos un paquete doble: Datos + Pagos
-    echo json_encode(['success' => true, 'cliente' => $cliente, 'pagos' => $pagos]);
+    echo json_encode(['success' => true, 'es_admin' => $esAdmin, 'cliente' => $cliente, 'pagos' => $pagos]);
 
 } catch (PDOException $e) {
     ob_clean();

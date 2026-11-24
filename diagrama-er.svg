@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1600" viewBox="0 0 2000 1600" role="img" aria-labelledby="title description">
+  <title id="title">Diagrama entidad-relación de GGG</title>
+  <desc id="description">Diagrama de las ocho tablas de la base de datos GGG y sus relaciones lógicas.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#152a46" flood-opacity=".10"/>
+    </filter>
+    <marker id="dot" markerWidth="8" markerHeight="8" refX="4" refY="4">
+      <circle cx="4" cy="4" r="3" fill="#72839a"/>
+    </marker>
+    <style>
+      text { font-family: "Segoe UI", Arial, sans-serif; fill: #172b4d; }
+      .title { font-size: 34px; font-weight: 700; }
+      .subtitle { font-size: 16px; fill: #5f7086; }
+      .card { fill: #fff; stroke: #d7e0eb; stroke-width: 1.5; filter: url(#shadow); }
+      .head { fill: #17365d; }
+      .head-title { fill: #fff; font-size: 17px; font-weight: 700; letter-spacing: .8px; }
+      .head-sub { fill: #c6d6e8; font-size: 11px; }
+      .field { font-size: 12.5px; }
+      .type { font-size: 11px; fill: #61738b; }
+      .key { font-size: 9px; font-weight: 700; fill: #fff; }
+      .rowline { stroke: #edf1f6; stroke-width: 1; }
+      .rel { fill: none; stroke: #72839a; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .rel-dot { fill: #fff; stroke: #72839a; stroke-width: 2; }
+      .rel-label { font-size: 11px; font-weight: 600; fill: #52657e; }
+      .cardinality { font-size: 11px; font-weight: 700; fill: #52657e; }
+      .pill { fill: #f0f4f9; stroke: #dce5ef; }
+      .note { font-size: 12px; fill: #52657e; }
+      .legend { font-size: 11px; fill: #52657e; }
+    </style>
+  </defs>
+
+  <rect width="2000" height="1600" fill="#f5f8fc"/>
+  <text class="title" x="60" y="58">Modelo entidad-relación · GGG</text>
+  <text class="subtitle" x="60" y="88">Esquema de la base de datos · campos y asociaciones inferidos del SQL y del uso en la aplicación</text>
+
+  <!-- Asociaciones lógicas, detrás de las entidades -->
+  <path class="rel" d="M560 355 H710"/>
+  <circle class="rel-dot" cx="560" cy="355" r="4"/>
+  <text class="cardinality" x="575" y="344">1</text>
+  <text class="cardinality" x="680" y="344">0..*</text>
+  <rect class="pill" x="590" y="363" width="88" height="22" rx="11"/>
+  <text class="rel-label" x="634" y="378" text-anchor="middle">realiza</text>
+
+  <path class="rel" d="M560 870 H650 V625 H710"/>
+  <circle class="rel-dot" cx="560" cy="870" r="4"/>
+  <text class="cardinality" x="573" y="858">1</text>
+  <text class="cardinality" x="692" y="613">0..*</text>
+  <rect class="pill" x="574" y="735" width="72" height="22" rx="11"/>
+  <text class="rel-label" x="610" y="750" text-anchor="middle">registra</text>
+
+  <path class="rel" d="M560 1305 H680 V700 H1030 V680"/>
+  <circle class="rel-dot" cx="560" cy="1305" r="4"/>
+  <text class="cardinality" x="573" y="1293">0..*</text>
+  <text class="cardinality" x="1010" y="670">0..1</text>
+  <rect class="pill" x="836" y="688" width="92" height="22" rx="11"/>
+  <text class="rel-label" x="882" y="703" text-anchor="middle">plan aplicado</text>
+
+  <path class="rel" d="M560 740 H630 V125 H1380 V315 H1450"/>
+  <circle class="rel-dot" cx="560" cy="740" r="4"/>
+  <text class="cardinality" x="574" y="728">0..*</text>
+  <text class="cardinality" x="1423" y="303">0..1</text>
+  <rect class="pill" x="1284" y="303" width="92" height="22" rx="11"/>
+  <text class="rel-label" x="1330" y="318" text-anchor="middle">audita</text>
+
+  <path class="rel" d="M1380 125 V645 H1450"/>
+  <circle class="rel-dot" cx="1450" cy="645" r="4"/>
+  <text class="cardinality" x="1419" y="633">1</text>
+  <rect class="pill" x="1284" y="634" width="92" height="22" rx="11"/>
+  <text class="rel-label" x="1330" y="649" text-anchor="middle">verifica correo</text>
+
+  <path class="rel" d="M1380 125 V935 H1450"/>
+  <circle class="rel-dot" cx="1450" cy="935" r="4"/>
+  <text class="cardinality" x="1419" y="923">1</text>
+  <rect class="pill" x="1284" y="924" width="92" height="22" rx="11"/>
+  <text class="rel-label" x="1330" y="939" text-anchor="middle">restablece clave</text>
+
+  <!-- CLIENTES -->
+  <g>
+    <rect class="card" x="60" y="180" width="500" height="350" rx="12"/>
+    <path class="head" d="M72 180 H548 Q560 180 560 192 V234 H60 V192 Q60 180 72 180Z"/>
+    <text class="head-title" x="82" y="207">CLIENTES</text>
+    <text class="head-sub" x="82" y="225">Personas registradas y membresías</text>
+    <g class="field">
+      <text x="82" y="260">id</text><text class="type" x="340" y="260">CHAR(36)</text><text class="key" x="476" y="260">PK</text>
+      <text x="82" y="286">tipo_documento</text><text class="type" x="340" y="286">CHAR(1) NULL</text><text class="key" x="476" y="286">UK*</text>
+      <text x="82" y="312">ci</text><text class="type" x="340" y="312">VARCHAR(9)</text><text class="key" x="476" y="312">UK*</text>
+      <text x="82" y="338">nombres</text><text class="type" x="340" y="338">VARCHAR(50)</text>
+      <text x="82" y="364">apellidos</text><text class="type" x="340" y="364">VARCHAR(50)</text>
+      <text x="82" y="390">tlf</text><text class="type" x="340" y="390">VARCHAR(12)</text>
+      <text x="82" y="416">email</text><text class="type" x="340" y="416">VARCHAR(254)</text>
+      <text x="82" y="442">direccion</text><text class="type" x="340" y="442">VARCHAR(255) NULL</text>
+      <text x="82" y="468">estatus</text><text class="type" x="340" y="468">VARCHAR(20)</text>
+      <text x="82" y="494">fecha_vencimiento</text><text class="type" x="340" y="494">DATE NULL</text>
+    </g>
+    <g class="rowline">
+      <path d="M78 270 H542 M78 296 H542 M78 322 H542 M78 348 H542 M78 374 H542 M78 400 H542 M78 426 H542 M78 452 H542 M78 478 H542"/>
+    </g>
+  </g>
+
+  <!-- OPERATOR -->
+  <g>
+    <rect class="card" x="60" y="600" width="500" height="510" rx="12"/>
+    <path class="head" d="M72 600 H548 Q560 600 560 612 V654 H60 V612 Q60 600 72 600Z"/>
+    <text class="head-title" x="82" y="627">OPERATOR</text>
+    <text class="head-sub" x="82" y="645">Cuentas del personal y control de acceso</text>
+    <g class="field">
+      <text x="82" y="680">id</text><text class="type" x="340" y="680">CHAR(36)</text><text class="key" x="476" y="680">PK</text>
+      <text x="82" y="705">ci</text><text class="type" x="340" y="705">VARCHAR(15)</text><text class="key" x="476" y="705">UK</text>
+      <text x="82" y="730">nombres</text><text class="type" x="340" y="730">VARCHAR(50)</text>
+      <text x="82" y="755">apellidos</text><text class="type" x="340" y="755">VARCHAR(50)</text>
+      <text x="82" y="780">contacto</text><text class="type" x="340" y="780">VARCHAR(254) NULL</text>
+      <text x="82" y="805">contacto_verified_at</text><text class="type" x="340" y="805">DATETIME NULL</text>
+      <text x="82" y="830">direccion</text><text class="type" x="340" y="830">VARCHAR(255) NULL</text>
+      <text x="82" y="855">PW</text><text class="type" x="340" y="855">VARCHAR(255)</text>
+      <text x="82" y="880">TLF</text><text class="type" x="340" y="880">VARCHAR(12)</text><text class="key" x="476" y="880">UK</text>
+      <text x="82" y="905">username</text><text class="type" x="340" y="905">VARCHAR(50)</text><text class="key" x="476" y="905">UK</text>
+      <text x="82" y="930">operator_role</text><text class="type" x="340" y="930">VARCHAR(20)</text>
+      <text x="82" y="955">activo</text><text class="type" x="340" y="955">TINYINT(1)</text>
+      <text x="82" y="980">operator_status</text><text class="type" x="340" y="980">VARCHAR(20)</text>
+      <text x="82" y="1005">vacation_start</text><text class="type" x="340" y="1005">DATE NULL</text>
+      <text x="82" y="1030">vacation_end</text><text class="type" x="340" y="1030">DATE NULL</text>
+      <text x="82" y="1055">login_failed_attempts</text><text class="type" x="340" y="1055">TINYINT UNSIGNED</text>
+      <text x="82" y="1080">login_locked_until</text><text class="type" x="340" y="1080">DATETIME NULL</text>
+    </g>
+    <g class="rowline">
+      <path d="M78 692 H542 M78 717 H542 M78 742 H542 M78 767 H542 M78 792 H542 M78 817 H542 M78 842 H542 M78 867 H542 M78 892 H542 M78 917 H542 M78 942 H542 M78 967 H542 M78 992 H542 M78 1017 H542 M78 1042 H542 M78 1067 H542"/>
+    </g>
+  </g>
+
+  <!-- PLANES -->
+  <g>
+    <rect class="card" x="60" y="1180" width="500" height="240" rx="12"/>
+    <path class="head" d="M72 1180 H548 Q560 1180 560 1192 V1234 H60 V1192 Q60 1180 72 1180Z"/>
+    <text class="head-title" x="82" y="1207">PLANES</text>
+    <text class="head-sub" x="82" y="1225">Catálogo de membresías</text>
+    <g class="field">
+      <text x="82" y="1260">id</text><text class="type" x="340" y="1260">INT</text><text class="key" x="476" y="1260">PK</text>
+      <text x="82" y="1286">nombre</text><text class="type" x="340" y="1286">VARCHAR(80)</text><text class="key" x="476" y="1286">UK</text>
+      <text x="82" y="1312">duracion_meses</text><text class="type" x="340" y="1312">SMALLINT</text>
+      <text x="82" y="1338">precio</text><text class="type" x="340" y="1338">DECIMAL(10,2)</text>
+      <text x="82" y="1364">activo</text><text class="type" x="340" y="1364">TINYINT(1)</text>
+      <text x="82" y="1390">coin</text><text class="type" x="340" y="1390">CHAR(3)</text>
+    </g>
+    <g class="rowline"><path d="M78 1270 H542 M78 1296 H542 M78 1322 H542 M78 1348 H542 M78 1374 H542"/></g>
+  </g>
+
+  <!-- PAGOS -->
+  <g>
+    <rect class="card" x="710" y="210" width="540" height="470" rx="12"/>
+    <path class="head" d="M722 210 H1238 Q1250 210 1250 222 V264 H710 V222 Q710 210 722 210Z"/>
+    <text class="head-title" x="732" y="237">PAGOS</text>
+    <text class="head-sub" x="732" y="255">Transacciones, referencias y datos históricos del plan</text>
+    <g class="field">
+      <text x="732" y="290">id</text><text class="type" x="1000" y="290">CHAR(36)</text><text class="key" x="1178" y="290">PK</text>
+      <text x="732" y="316">id_cliente</text><text class="type" x="1000" y="316">CHAR(36)</text><text class="key" x="1178" y="316">FK*</text>
+      <text x="732" y="342">reference</text><text class="type" x="1000" y="342">VARCHAR(60)</text><text class="key" x="1178" y="342">UK</text>
+      <text x="732" y="368">monto</text><text class="type" x="1000" y="368">DECIMAL(12,2)</text>
+      <text x="732" y="394">coin</text><text class="type" x="1000" y="394">CHAR(3)</text>
+      <text x="732" y="420">id_operador</text><text class="type" x="1000" y="420">CHAR(36)</text><text class="key" x="1178" y="420">FK*</text>
+      <text x="732" y="446">fecha_pago / fecha_registro</text><text class="type" x="1000" y="446">DATE / DATETIME</text>
+      <text x="732" y="472">metodo_pago</text><text class="type" x="1000" y="472">VARCHAR(30)</text>
+      <text x="732" y="498">id_plan</text><text class="type" x="1000" y="498">INT NULL</text><text class="key" x="1178" y="498">FK*</text>
+      <text x="732" y="524">monto_usd</text><text class="type" x="1000" y="524">DECIMAL(12,2) NULL</text>
+      <text x="732" y="550">tasa_bcv</text><text class="type" x="1000" y="550">DECIMAL(18,8) NULL</text>
+      <text x="732" y="576">fecha_valor_bcv</text><text class="type" x="1000" y="576">DATE NULL</text>
+      <text x="732" y="602">plan_nombre_snapshot</text><text class="type" x="1000" y="602">VARCHAR(80) NULL</text>
+      <text x="732" y="628">plan_duracion_meses_snapshot</text><text class="type" x="1000" y="628">SMALLINT NULL</text>
+    </g>
+    <g class="rowline">
+      <path d="M728 302 H1232 M728 328 H1232 M728 354 H1232 M728 380 H1232 M728 406 H1232 M728 432 H1232 M728 458 H1232 M728 484 H1232 M728 510 H1232 M728 536 H1232 M728 562 H1232 M728 588 H1232 M728 614 H1232"/>
+    </g>
+  </g>
+
+  <!-- APP_SETTINGS -->
+  <g>
+    <rect class="card" x="710" y="1050" width="540" height="145" rx="12"/>
+    <path class="head" d="M722 1050 H1238 Q1250 1050 1250 1062 V1104 H710 V1062 Q710 1050 722 1050Z"/>
+    <text class="head-title" x="732" y="1077">APP_SETTINGS</text>
+    <text class="head-sub" x="732" y="1095">Configuración general</text>
+    <g class="field">
+      <text x="732" y="1130">setting_key</text><text class="type" x="1000" y="1130">VARCHAR(80)</text><text class="key" x="1178" y="1130">PK</text>
+      <text x="732" y="1156">setting_value</text><text class="type" x="1000" y="1156">VARCHAR(255)</text>
+    </g>
+    <path class="rowline" d="M728 1140 H1232"/>
+  </g>
+
+  <!-- AUDIT_LOGS -->
+  <g>
+    <rect class="card" x="1450" y="180" width="470" height="305" rx="12"/>
+    <path class="head" d="M1462 180 H1908 Q1920 180 1920 192 V234 H1450 V192 Q1450 180 1462 180Z"/>
+    <text class="head-title" x="1472" y="207">AUDIT_LOGS</text>
+    <text class="head-sub" x="1472" y="225">Registro de acciones del sistema</text>
+    <g class="field">
+      <text x="1472" y="260">id</text><text class="type" x="1710" y="260">BIGINT</text><text class="key" x="1850" y="260">PK</text>
+      <text x="1472" y="286">actor_operator_id</text><text class="type" x="1710" y="286">CHAR(36) NULL</text><text class="key" x="1850" y="286">FK*</text>
+      <text x="1472" y="312">actor_username</text><text class="type" x="1710" y="312">VARCHAR(50)</text>
+      <text x="1472" y="338">action</text><text class="type" x="1710" y="338">VARCHAR(80)</text>
+      <text x="1472" y="364">entity_type</text><text class="type" x="1710" y="364">VARCHAR(60)</text>
+      <text x="1472" y="390">entity_id</text><text class="type" x="1710" y="390">VARCHAR(64) NULL</text>
+      <text x="1472" y="416">changes</text><text class="type" x="1710" y="416">LONGTEXT NULL</text>
+      <text x="1472" y="442">created_at</text><text class="type" x="1710" y="442">TIMESTAMP</text>
+    </g>
+    <g class="rowline"><path d="M1468 272 H1902 M1468 298 H1902 M1468 324 H1902 M1468 350 H1902 M1468 376 H1902 M1468 402 H1902 M1468 428 H1902"/></g>
+  </g>
+
+  <!-- EMAIL_VERIFICATION_TOKENS -->
+  <g>
+    <rect class="card" x="1450" y="540" width="470" height="225" rx="12"/>
+    <path class="head" d="M1462 540 H1908 Q1920 540 1920 552 V594 H1450 V552 Q1450 540 1462 540Z"/>
+    <text class="head-title" x="1472" y="567" style="font-size:15px">EMAIL_VERIFICATION_TOKENS</text>
+    <text class="head-sub" x="1472" y="585">Verificación de correo del operador</text>
+    <g class="field">
+      <text x="1472" y="620">id</text><text class="type" x="1710" y="620">BIGINT</text><text class="key" x="1850" y="620">PK</text>
+      <text x="1472" y="646">operator_id</text><text class="type" x="1710" y="646">CHAR(36)</text><text class="key" x="1850" y="646">FK*</text>
+      <text x="1472" y="672">token_hash</text><text class="type" x="1710" y="672">CHAR(64)</text><text class="key" x="1850" y="672">UK</text>
+      <text x="1472" y="698">expires_at</text><text class="type" x="1710" y="698">DATETIME</text>
+      <text x="1472" y="724">created_at</text><text class="type" x="1710" y="724">TIMESTAMP</text>
+    </g>
+    <g class="rowline"><path d="M1468 632 H1902 M1468 658 H1902 M1468 684 H1902 M1468 710 H1902"/></g>
+  </g>
+
+  <!-- PASSWORD_RESET_TOKENS -->
+  <g>
+    <rect class="card" x="1450" y="820" width="470" height="250" rx="12"/>
+    <path class="head" d="M1462 820 H1908 Q1920 820 1920 832 V874 H1450 V832 Q1450 820 1462 820Z"/>
+    <text class="head-title" x="1472" y="847" style="font-size:15px">PASSWORD_RESET_TOKENS</text>
+    <text class="head-sub" x="1472" y="865">Recuperación de acceso</text>
+    <g class="field">
+      <text x="1472" y="900">id</text><text class="type" x="1710" y="900">BIGINT</text><text class="key" x="1850" y="900">PK</text>
+      <text x="1472" y="926">operator_id</text><text class="type" x="1710" y="926">VARCHAR(64)</text><text class="key" x="1850" y="926">FK*</text>
+      <text x="1472" y="952">token_hash</text><text class="type" x="1710" y="952">CHAR(64)</text><text class="key" x="1850" y="952">UK</text>
+      <text x="1472" y="978">expires_at</text><text class="type" x="1710" y="978">DATETIME</text>
+      <text x="1472" y="1004">created_at</text><text class="type" x="1710" y="1004">TIMESTAMP</text>
+    </g>
+    <g class="rowline"><path d="M1468 912 H1902 M1468 938 H1902 M1468 964 H1902 M1468 990 H1902"/></g>
+  </g>
+
+  <!-- Leyenda y notas -->
+  <g transform="translate(60 1470)">
+    <text class="note" x="0" y="0" font-weight="700">Claves</text>
+    <text class="legend" x="0" y="25">PK primaria</text>
+    <text class="legend" x="105" y="25">UK única</text>
+    <text class="legend" x="195" y="25">FK* referencia lógica, no declarada como FOREIGN KEY en SQL</text>
+    <text class="legend" x="0" y="52">UK* unicidad compuesta (tipo_documento, ci) en CLIENTES. id_plan y actor_operator_id son opcionales.</text>
+    <text class="legend" x="0" y="77">PASSWORD_RESET_TOKENS.operator_id es VARCHAR(64); OPERATOR.id es CHAR(36). APP_SETTINGS no tiene relaciones.</text>
+  </g>
+  <text class="legend" x="1920" y="1560" text-anchor="end">Fuente: database/schema.sql · Asociaciones de aplicación, no restricciones físicas de FK</text>
+</svg>

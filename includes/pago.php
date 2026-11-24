@@ -13,8 +13,9 @@ class Pago
     private $tasaBcv;
     private $fechaValorBcv;
     private $planNombre;
+    private $fechaPago;
 
-    public function __construct($idCliente, $reference, $monto, $coin, $idOperador, $metodoPago, $idPlan, $duracionMeses, $montoUsd, $tasaBcv, $fechaValorBcv, $planNombre)
+    public function __construct($idCliente, $reference, $monto, $coin, $idOperador, $metodoPago, $idPlan, $duracionMeses, $montoUsd, $tasaBcv, $fechaValorBcv, $planNombre, $fechaPago)
     {
         $this->idCliente = $idCliente;
         $this->reference = $reference;
@@ -28,6 +29,7 @@ class Pago
         $this->tasaBcv = $tasaBcv;
         $this->fechaValorBcv = $fechaValorBcv;
         $this->planNombre = $planNombre;
+        $this->fechaPago = $fechaPago;
     }
 
     public function guardar($pdo)
@@ -41,8 +43,10 @@ class Pago
             if (!$clienteAntes) {
                 throw new RuntimeException('No se encontró el cliente del pago.');
             }
+            $fechaRegistro = (new DateTimeImmutable('now', new DateTimeZone('America/Caracas')))
+                ->format('Y-m-d H:i:s');
             $stmt = $pdo->prepare(
-                'INSERT INTO pagos (id, id_cliente, reference, monto, coin, id_operador, metodo_pago, id_plan, monto_usd, tasa_bcv, fecha_valor_bcv, plan_nombre_snapshot, plan_duracion_meses_snapshot) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                'INSERT INTO pagos (id, id_cliente, reference, monto, coin, id_operador, fecha_pago, fecha_registro, metodo_pago, id_plan, monto_usd, tasa_bcv, fecha_valor_bcv, plan_nombre_snapshot, plan_duracion_meses_snapshot) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
             $stmt->execute([
                 $this->idCliente,
@@ -50,6 +54,8 @@ class Pago
                 $this->monto,
                 $this->coin,
                 $this->idOperador,
+                $this->fechaPago,
+                $fechaRegistro,
                 $this->metodoPago,
                 $this->idPlan,
                 $this->montoUsd,
@@ -63,12 +69,12 @@ class Pago
                 UPDATE clientes
                 SET estatus = 'Activo',
                     fecha_vencimiento = DATE_ADD(
-                        GREATEST(COALESCE(fecha_vencimiento, CURDATE()), CURDATE()),
+                        GREATEST(COALESCE(fecha_vencimiento, ?), ?),
                         INTERVAL ? MONTH
                     )
                 WHERE id = ?
             ");
-            $stmt->execute([$this->duracionMeses, $this->idCliente]);
+            $stmt->execute([$this->fechaPago, $this->fechaPago, $this->duracionMeses, $this->idCliente]);
             if ($stmt->rowCount() === 0) {
                 throw new RuntimeException('No se pudo actualizar el vencimiento del cliente.');
             }
