@@ -261,8 +261,8 @@ $display_dashboard = 'none';
                         <th>Moneda</th>
                         <th>Tasa BCV</th>
                         <th>Método</th>
-                        <th class="th-pago-admin">Registro (VET)</th>
-                        <th class="th-pago-admin">Operador</th>
+                        <th class="th-pago-admin" hidden title="Fecha y hora en que se guardó el pago, según la hora de Venezuela.">Registro (hora de Venezuela)</th>
+                        <th class="th-pago-admin" hidden>Operador</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -273,11 +273,7 @@ $display_dashboard = 'none';
 
         <div id="addpay" class="modo-lateral" style="display:none;">
             <form id="payform" autocomplete="off" onsubmit="procesarFormulario(event, 'api/registrar_pago.php', (res) => {
-                alert('¡Transacción procesada con éxito!'); 
-                cargarTablaPagos(); /* Recargamos la tabla al instante */
-                document.getElementById('payform').reset();
-                establecerFechaPagoHoy();
-                adaptarFormularioPago(''); /* Limpiamos el campo dinámico */
+                alert('¡Transacción procesada con éxito!');
             })">
                 <h3>Registrar Nuevo Pago</h3>
                 
@@ -297,7 +293,7 @@ $display_dashboard = 'none';
                         <option value="G">G</option>
                         <option value="P">P</option>
                     </select>
-                    <input type="text" inputmode="numeric" name="cedula_identidad" autocomplete="off" placeholder="Cédula (6 a 9 dígitos)" pattern="[0-9]{6,9}" minlength="6" maxlength="9" required />
+                    <input type="text" name="cedula_identidad" autocomplete="off" placeholder="Cédula (ej. V-1234567)" pattern="([VEJGP]-?)?[0-9]{6,9}" minlength="6" maxlength="11" required />
                 </div>
 
                 <div class="input-group-row">
@@ -377,13 +373,17 @@ $display_dashboard = 'none';
         </form>
     </section>
     <section class="config-card">
-        <h2>Vencimientos y operadores <span class="help-tip" tabindex="0" aria-label="Ayuda sobre operadores" title="Las cuentas que no estén Activas no pueden iniciar sesión. Las vacaciones se reactivan automáticamente al terminar su período." data-tip="Las cuentas que no estén Activas no pueden iniciar sesión. Las vacaciones se reactivan automáticamente al terminar su período.">?</span></h2>
+        <h2>Aviso de vencimientos</h2>
+        <p>Define cuántos días antes del vencimiento un cliente se considera «Por vencer».</p>
         <form id="form-aviso" onsubmit="guardarAviso(event)">
             <label>Días de anticipación para avisar
                 <input type="number" name="dias_aviso" min="0" max="90" required>
             </label>
             <button type="submit" class="btn-nuevo">Guardar aviso</button>
         </form>
+    </section>
+    <section class="config-card">
+        <h2>Operadores <span class="help-tip" tabindex="0" aria-label="Ayuda sobre operadores" title="Las cuentas que no estén Activas no pueden iniciar sesión. Las vacaciones se reactivan automáticamente al terminar su período." data-tip="Las cuentas que no estén Activas no pueden iniciar sesión. Las vacaciones se reactivan automáticamente al terminar su período.">?</span></h2>
         <div id="lista-operadores"></div>
     </section>
     <section class="config-card">
@@ -583,8 +583,8 @@ $display_dashboard = 'none';
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Monto</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Tasa BCV</th>
                         <th style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Método</th>
-                        <th class="th-perfil-pago-admin" style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Registro (VET)</th>
-                        <th class="th-perfil-pago-admin" style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Operador</th>
+                        <th class="th-perfil-pago-admin" hidden title="Fecha y hora en que se guardó el pago, según la hora de Venezuela." style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Registro (hora de Venezuela)</th>
+                        <th class="th-perfil-pago-admin" hidden style="padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1;">Operador</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -595,6 +595,6 @@ $display_dashboard = 'none';
         </div>
     </div>
 
-    <script src="assets/js/lg.js?v=20261124-csrf-session-check"></script>
+    <script src="assets/js/lg.js?v=<?php echo filemtime(__DIR__ . '/assets/js/lg.js'); ?>"></script>
 </body>
 </html>

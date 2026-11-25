@@ -10,7 +10,7 @@ let paginaActualAuditoria = 1;
 let configuracionTecnicaEditable = false;
 let perfilPagosEsAdmin = false;
 
-function establecerFechaPagoHoy() {
+function establecerFechaPagoHoy(soloSiVacia = false) {
     const input = document.getElementById('fecha-pago');
     if (!input) return;
     const partes = new Intl.DateTimeFormat('en-CA', {
@@ -24,18 +24,39 @@ function establecerFechaPagoHoy() {
     }, {});
     const hoy = `${partes.year}-${partes.month}-${partes.day}`;
     input.max = hoy;
-    input.value = hoy;
+    if (!soloSiVacia || !input.value) input.value = hoy;
 }
 
 function formatearFechaVenezolana(fecha) {
     const coincidencia = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
-    return coincidencia ? `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]}` : (fecha || 'Sin fecha');
+    if (!coincidencia) return 'Sin fecha';
+
+    const [anio, mes, dia] = coincidencia.slice(1).map(Number);
+    const fechaValidada = new Date(Date.UTC(anio, mes - 1, dia));
+    if (
+        fechaValidada.getUTCFullYear() !== anio
+        || fechaValidada.getUTCMonth() !== mes - 1
+        || fechaValidada.getUTCDate() !== dia
+    ) {
+        return 'Sin fecha';
+    }
+    return `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]}`;
+}
+
+function formatearTasaBcvPago(pago) {
+    if (pago.tasa_bcv === null || pago.tasa_bcv === undefined || pago.tasa_bcv === '') return '—';
+
+    const fechaValor = formatearFechaVenezolana(pago.fecha_valor_bcv);
+    const detalle = pago.tasa_bcv_referencial === true
+        ? `Tasa actual referencial · fecha ${fechaValor}`
+        : `Fecha valor ${fechaValor}`;
+    return `${formatearNumeroVenezolano(pago.tasa_bcv, 8)} Bs/USD · ${detalle}`;
 }
 
 function formatearFechaHoraVenezolana(fecha) {
     const coincidencia = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
     return coincidencia
-        ? `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]} ${coincidencia[4]}:${coincidencia[5]} VET`
+        ? `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]} ${coincidencia[4]}:${coincidencia[5]}`
         : 'Sin registro';
 }
 
@@ -109,7 +130,7 @@ function validarFormulario(form) {
             ? /^\d{6,9}$/
             : /^(?:[VEJGP]-?)?\d{6,9}$/i;
         if (!regex.test(valor)) {
-            cedula.setCustomValidity('Ingresa una cédula de 6 a 9 dígitos, por ejemplo 30830476.');
+            cedula.setCustomValidity('Ingresa una cédula de 6 a 9 dígitos, por ejemplo V-30830476.');
             cedula.reportValidity();
             cedula.setCustomValidity('');
             return false;
@@ -167,6 +188,7 @@ async function procesarFormulario(event, url, callbackExito) {
     }
 
     const formData = new FormData(form);
+    let operacionConfirmada = false;
 
     try {
         const rawResponse = await fetchConCsrf(url, { method: 'POST', body: formData }).then(r => r.text());
@@ -181,6 +203,7 @@ async function procesarFormulario(event, url, callbackExito) {
         }
 
         if (res.success) {
+            operacionConfirmada = true;
             if (url === 'api/registrar_cliente.php' && window.pagoPendienteForm) {
                 window.pagoPendienteForm.set('tipo_documento', String(formData.get('tipo_documento') || ''));
                 window.pagoPendienteForm.set('cedula_identidad', String(formData.get('ci') || '').trim());
@@ -204,14 +227,17 @@ async function procesarFormulario(event, url, callbackExito) {
             if (url !== 'api/auth.php') {
                 form.reset();
             }
+            if (url === 'api/registrar_pago.php') {
+                establecerFechaPagoHoy();
+            }
 
             if (url === 'api/registrar_cliente.php') {
                 cargarResumenDashboard();
             }
 
             if (url === 'api/registrar_pago.php' && typeof adaptarFormularioPago === 'function') {
-                adaptarFormularioPago('');
-                cargarResumenDashboard();
+                adaptarFormularioPago('', false);
+                await Promise.all([cargarTablaPagos(), cargarResumenDashboard()]);
             }
 
             // ⭐ MAGIA SUPREMA: PLANO SECUENCIA (PAGO ENCADENADO) ⭐
@@ -240,7 +266,7 @@ async function procesarFormulario(event, url, callbackExito) {
                                 cargarResumenDashboard();
                                 document.getElementById('payform').reset();
                                 establecerFechaPagoHoy();
-                                adaptarFormularioPago('');
+                                adaptarFormularioPago('', false);
                             } else {
                                 alert("El cliente se guardó espectacular, pero hubo un drama con el pago: " + pagoRes.message);
                             }
@@ -314,7 +340,30 @@ async function procesarFormulario(event, url, callbackExito) {
 
     } catch (error) {
         console.error("Error de Red o Ejecución:", error);
-        alert("¡Fallo crítico en el rodaje!");
+        if (operacionConfirmada) {
+            if (url === 'api/registrar_pago.php') {
+                try {
+                    document.getElementById('payform')?.reset();
+                    establecerFechaPagoHoy();
+                    adaptarFormularioPago('', false);
+                    await Promise.all([cargarTablaPagos(), cargarResumenDashboard()]);
+                } catch (errorActualizacion) {
+                    console.error('No se pudieron refrescar los pagos y el resumen:', errorActualizacion);
+                }
+            }
+            const errorResumen = document.getElementById('resumen-error');
+            const mensajeActualizacion = url === 'api/registrar_pago.php'
+                ? 'El pago se registró, pero no se pudo completar la actualización de la pantalla. Recarga para ver los cambios.'
+                : 'La operación se guardó, pero no se pudo completar la actualización de la pantalla. Recarga para ver los cambios.';
+            if (errorResumen) {
+                errorResumen.textContent = mensajeActualizacion;
+                errorResumen.hidden = false;
+            } else {
+                alert(mensajeActualizacion);
+            }
+        } else {
+            alert("¡Fallo crítico en el rodaje!");
+        }
     } finally {
         if (boton) {
             boton.disabled = false;
@@ -568,6 +617,7 @@ function toggleFormularioPago() {
 
     if (formContainer.style.display === 'none' || formContainer.style.display === '') {
         formContainer.style.display = 'block';
+        establecerFechaPagoHoy(true);
         if (boton) {
             boton.innerHTML = '- Cancelar Pago';
             boton.classList.add('btn-cerrar');
@@ -581,7 +631,7 @@ function toggleFormularioPago() {
     }
 }
 
-function adaptarFormularioPago(metodo) {
+function adaptarFormularioPago(metodo, recargarPlanes = true) {
     const contenedor = document.getElementById('contenedor-dinamico');
     const input = document.getElementById('input-dinamico');
     if (!contenedor || !input) return;
@@ -599,7 +649,8 @@ function adaptarFormularioPago(metodo) {
         input.required = false;
         input.value = '';
     }
-    cargarPlanesPago();
+    if (recargarPlanes) cargarPlanesPago();
+    else actualizarMontoPago();
 }
 
 function cargarTablaPagos(pagina = 1) {
@@ -617,7 +668,7 @@ function cargarTablaPagos(pagina = 1) {
         metodo: document.getElementById('filtro-pago-metodo')?.value || ''
     });
 
-    fetch(`api/buscar_pagos.php?${params}`)
+    return fetch(`api/buscar_pagos.php?${params}`, { cache: 'no-store' })
         .then(response => response.json())
         .then(data => {
             tbody.innerHTML = '';
@@ -628,6 +679,7 @@ function cargarTablaPagos(pagina = 1) {
             }
             const esAdmin = data.es_admin === true;
             document.querySelectorAll('.th-pago-admin').forEach(th => {
+                th.hidden = !esAdmin;
                 th.style.display = esAdmin ? '' : 'none';
             });
 
@@ -646,7 +698,7 @@ function cargarTablaPagos(pagina = 1) {
                         pago.reference || '',
                         formatearNumeroVenezolano(pago.monto),
                         pago.coin,
-                        pago.tasa_bcv ? `${formatearNumeroVenezolano(pago.tasa_bcv, 8)} Bs/USD · Fecha valor ${formatearFechaVenezolana(pago.fecha_valor_bcv)}` : '—',
+                        formatearTasaBcvPago(pago),
                         pago.metodo_pago || ''
                     ];
                     if (esAdmin) {
@@ -703,11 +755,13 @@ function sugerirClientes(query) {
 function seleccionarClienteParaPago(cliente) {
     document.getElementById('buscador-cliente-pago').value = `${cliente.nombres} ${cliente.apellidos}`;
 
-    const inputCedula = document.querySelector('input[name="cedula_identidad"]');
-    const selectTipoDoc = document.querySelector('select[name="tipo_documento"]');
+    const formularioPago = document.getElementById('payform');
+    const inputCedula = formularioPago?.querySelector('input[name="cedula_identidad"]');
+    const selectTipoDoc = formularioPago?.querySelector('select[name="tipo_documento"]');
 
     if (selectTipoDoc) selectTipoDoc.value = cliente.tipo_documento || '';
     if (inputCedula) inputCedula.value = cliente.ci_codigo || cliente.ci;
+    detectarTipoDocumentoPago();
 
     const inputTlf = document.querySelector('input[name="telefono"]');
     const selectCod = document.querySelector('select[name="codigo_operadora"]');
@@ -742,6 +796,19 @@ function seleccionarClienteParaPago(cliente) {
 
     const caja = document.getElementById('sugerencias-clientes');
     if (caja) caja.style.display = 'none';
+}
+
+function detectarTipoDocumentoPago() {
+    const formularioPago = document.getElementById('payform');
+    const inputCedula = formularioPago?.querySelector('input[name="cedula_identidad"]');
+    const selectTipoDoc = formularioPago?.querySelector('select[name="tipo_documento"]');
+    if (!inputCedula || !selectTipoDoc) return;
+
+    const coincidencia = inputCedula.value.trim().match(/^([VEJGP])\s*-?\s*(\d{0,9})$/i);
+    if (!coincidencia) return;
+
+    selectTipoDoc.value = coincidencia[1].toUpperCase();
+    inputCedula.value = coincidencia[2];
 }
 
 // --- SISTEMA DE EXPEDIENTES Y PAGINACIÓN ---
@@ -780,6 +847,7 @@ async function abrirPerfilCliente(idCliente) {
                 pagosActualesPerfil = data.pagos;
                 perfilPagosEsAdmin = data.es_admin === true;
                 document.querySelectorAll('.th-perfil-pago-admin').forEach(th => {
+                    th.hidden = !perfilPagosEsAdmin;
                     th.style.display = perfilPagosEsAdmin ? '' : 'none';
                 });
                 paginaActualPagos = 1;
@@ -824,7 +892,7 @@ function renderizarTablaPagosPerfil() {
                 fechaEfectiva,
                 p.reference,
                 `${formatearNumeroVenezolano(p.monto)} ${p.coin}`,
-                p.tasa_bcv ? `${formatearNumeroVenezolano(p.tasa_bcv, 8)} Bs/USD · Fecha valor ${formatearFechaVenezolana(p.fecha_valor_bcv)}` : '—',
+                formatearTasaBcvPago(p),
                 p.metodo_pago || ''
             ];
             if (perfilPagosEsAdmin) {
@@ -910,6 +978,7 @@ function actualizarMontoPago() {
     const output = document.getElementById('pago-monto-mostrado');
     const metodo = document.getElementById('metodo_pago')?.value || '';
     const boton = document.querySelector('#payform input[type="submit"]');
+    if (!output) return;
     if (!option?.dataset.precio) {
         output.textContent = 'Selecciona un plan';
         if (boton) boton.disabled = true;
@@ -970,7 +1039,7 @@ async function cargarPlanesPago() {
 
 async function cargarResumenDashboard() {
     try {
-        const response = await fetch('api/dashboard_summary.php');
+        const response = await fetch('api/dashboard_summary.php', { cache: 'no-store' });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo cargar el resumen.');
         document.getElementById('resumen-activos').textContent = data.activos;
@@ -1561,12 +1630,26 @@ async function cargarReporte(event) {
         if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo generar el reporte.');
         const resultado = document.getElementById('resultado-reporte');
         resultado.replaceChildren();
+        if (!data.totales.length) {
+            resultado.textContent = 'Lapso de tiempo vacío.';
+            return;
+        }
+
+        const totalesPorMoneda = { VES: 0, USD: 0 };
         data.totales.forEach(total => {
-            const item = document.createElement('p');
-            item.textContent = `${total.coin} — ${total.metodo_pago} — ${total.operador || 'Operador desconocido'}: ${formatearNumeroVenezolano(total.total || 0)} (${total.cantidad} pagos)`;
-            resultado.appendChild(item);
+            const moneda = String(total.coin).toUpperCase();
+            if (Object.prototype.hasOwnProperty.call(totalesPorMoneda, moneda)) {
+                totalesPorMoneda[moneda] = Number(total.total) || 0;
+            }
         });
-        if (!data.totales.length) resultado.textContent = 'No hay pagos en ese período.';
+
+        const totalBolivares = document.createElement('p');
+        totalBolivares.textContent = `Ganancias en bolívares (VES): Bs. ${formatearNumeroVenezolano(totalesPorMoneda.VES)}`;
+        resultado.appendChild(totalBolivares);
+
+        const totalDolares = document.createElement('p');
+        totalDolares.textContent = `Ganancias en dólares (USD): $ ${formatearNumeroVenezolano(totalesPorMoneda.USD)}`;
+        resultado.appendChild(totalDolares);
     } catch (error) {
         alert(error.message);
     }
@@ -1606,6 +1689,8 @@ async function guardarEdicionCliente(event) {
 
 document.addEventListener('DOMContentLoaded', () => {
     establecerFechaPagoHoy();
+    document.querySelector('#payform input[name="cedula_identidad"]')
+        ?.addEventListener('input', detectarTipoDocumentoPago);
     moverControlTema(false);
     establecerTemaUsuario('');
     document.getElementById('theme-toggle')?.addEventListener('click', alternarTema);

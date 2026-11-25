@@ -33,7 +33,7 @@ if (empty($cedula_num) || !in_array($metodo_pago, ['pagomovil', 'divisa', 'trans
 }
 
 $fechaPagoParseada = DateTime::createFromFormat('!Y-m-d', $fechaPago);
-$hoy = (new DateTime('today'))->format('Y-m-d');
+$hoy = (new DateTimeImmutable('today', new DateTimeZone('America/Caracas')))->format('Y-m-d');
 if (!$fechaPagoParseada || $fechaPagoParseada->format('Y-m-d') !== $fechaPago || $fechaPago > $hoy) {
     http_response_code(422);
     ob_clean();
@@ -44,14 +44,11 @@ if (!$fechaPagoParseada || $fechaPagoParseada->format('Y-m-d') !== $fechaPago ||
 try {
     require_once __DIR__ . '/../includes/validaciones.php';
     $tipo_documento = strtoupper(trim($_POST['tipo_documento'] ?? ''));
-    $cedula = in_array($tipo_documento, ['V', 'E', 'J', 'G', 'P'], true)
-        && preg_match('/^\d{6,9}$/', $cedula_num)
-        ? descomponerCedula($cedula_num, $tipo_documento)
-        : false;
+    $cedula = descomponerCedula($cedula_num, $tipo_documento);
     if ($cedula === false || $cedula['tipo_documento'] === null) {
         http_response_code(422);
         ob_clean();
-        echo json_encode(['success' => false, 'message' => 'La cédula debe contener entre 6 y 9 dígitos.']);
+        echo json_encode(['success' => false, 'message' => 'Indica un tipo de documento válido (V, E, J, G o P) y una cédula de 6 a 9 dígitos.']);
         exit;
     }
     $stmt_cliente = $pdo->prepare(

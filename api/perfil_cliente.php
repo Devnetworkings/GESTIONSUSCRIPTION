@@ -6,6 +6,7 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
+require_once __DIR__ . '/../includes/bcv_rate.php';
 $currentOperator = requireActiveOperator($pdo);
 $esAdmin = $currentOperator['operator_role'] === 'admin';
 
@@ -52,7 +53,7 @@ try {
         ORDER BY p.fecha_registro DESC
     ");
     $stmt_pagos->execute([$id_cliente]);
-    $pagos = $stmt_pagos->fetchAll(PDO::FETCH_ASSOC);
+    $pagos = completarPagosConTasaActualReferencial($stmt_pagos->fetchAll(PDO::FETCH_ASSOC), $pdo);
 
     ob_clean();
     // Enviamos un paquete doble: Datos + Pagos

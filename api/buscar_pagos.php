@@ -7,6 +7,7 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/conexion.php';
 require_once __DIR__ . '/../includes/auth_guard.php';
+require_once __DIR__ . '/../includes/bcv_rate.php';
 $currentOperator = requireActiveOperator($pdo);
 $esAdmin = $currentOperator['operator_role'] === 'admin';
 
@@ -86,7 +87,7 @@ try {
     $stmt->bindValue(':limite', $por_pagina, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
-    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $resultados = completarPagosConTasaActualReferencial($stmt->fetchAll(PDO::FETCH_ASSOC), $pdo);
     ob_clean();
     echo json_encode(['success' => true, 'es_admin' => $esAdmin, 'data' => $resultados, 'pagina' => $pagina, 'por_pagina' => $por_pagina, 'total' => $total, 'paginas' => (int) ceil($total / $por_pagina)]);
 } catch (PDOException $e) {

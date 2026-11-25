@@ -185,6 +185,34 @@ function obtenerTasaBcv(PDO $pdo, bool $forzarConsulta = false): array
     ];
 }
 
+function completarPagosConTasaActualReferencial(array $pagos, PDO $pdo): array
+{
+    $requiereTasaActual = false;
+    foreach ($pagos as $pago) {
+        if (!isset($pago['tasa_bcv']) || $pago['tasa_bcv'] === '') {
+            $requiereTasaActual = true;
+            break;
+        }
+    }
+
+    $tasaActual = $requiereTasaActual ? obtenerTasaBcv($pdo) : null;
+    foreach ($pagos as &$pago) {
+        $pago['tasa_bcv_referencial'] = false;
+        if (
+            $tasaActual !== null
+            && $tasaActual['available']
+            && (!isset($pago['tasa_bcv']) || $pago['tasa_bcv'] === '')
+        ) {
+            $pago['tasa_bcv'] = $tasaActual['rate'];
+            $pago['fecha_valor_bcv'] = $tasaActual['value_date'];
+            $pago['tasa_bcv_referencial'] = true;
+        }
+    }
+    unset($pago);
+
+    return $pagos;
+}
+
 function establecerTasaManualBcv(PDO $pdo, string $rate): void
 {
     $normalized = str_replace(',', '.', trim($rate));

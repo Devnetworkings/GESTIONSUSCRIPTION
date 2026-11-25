@@ -77,6 +77,9 @@ Para registrar un pago:
 3. Ingresa la referencia del comprobante. Para efectivo en divisa, el sistema genera una referencia si se deja vacía.
 4. Confirma el pago. Si se guarda correctamente, se renueva el vencimiento por un mes y el movimiento aparece en el historial.
 
+Al seleccionar un cliente existente, el formulario completa el tipo y el número de documento guardados. La fecha efectiva se inicia con la fecha actual de Venezuela y se puede cambiar si el pago se registra después de haber sido realizado.
+La fecha efectiva indica cuándo se realizó el pago. Solo los administradores ven también la fecha y hora en que se guardó en el sistema (hora de Venezuela) y el operador que lo registró.
+
 Las referencias no se pueden repetir. Si la cédula no corresponde a un cliente registrado, registra primero el cliente; el formulario puede continuar con el pago pendiente.
 
 Los formularios de clientes y pagos desactivan las sugerencias guardadas por el navegador para evitar reutilizar datos o referencias anteriores. El selector de clientes en el formulario de pago conserva las sugerencias propias del sistema para elegir un cliente existente.
@@ -90,6 +93,7 @@ La aplicación consulta `https://www.bcv.org.ve/` desde el servidor, lee el valo
 - Si no hay una tasa oficial válida del día, Configuración permite al administrador establecer una tasa manual. La interfaz identifica esa tasa como manual; una consulta oficial exitosa posterior la reemplaza.
 - Sin tasa oficial válida del día o tasa manual, se bloquean nuevos pagos en VES. Los pagos en USD siguen disponibles.
 - Cada nuevo pago guarda el precio del plan en USD, el monto efectivamente cobrado y, cuando fue en VES, la tasa y Fecha Valor utilizadas. El expediente y el historial financiero muestran esos datos.
+- Si un pago histórico no tiene una tasa BCV guardada, el historial puede mostrar la tasa vigente de hoy como referencial; esto no modifica el registro ni presenta esa tasa como la histórica.
 
 Los pagos se conservan con su moneda y monto originales. No se inventa ni recalcula una tasa retroactiva para pagos históricos en VES.
 
@@ -100,7 +104,7 @@ Desde **Configuración**, el administrador puede:
 - Añadir planes indicando nombre y precio en USD; editar esos datos, quitarlos de la oferta (desactivarlos) y reactivarlos. Todos los planes duran un mes.
 - Consultar el precio convertido a bolívares con la tasa válida del BCV al momento de registrar el pago. Los pagos en divisas conservan el precio USD.
 - Consultar el estado de la tasa BCV o fijar una tasa manual cuando no haya una tasa oficial vigente del día.
-- Definir el aviso de vencimiento entre 0 y 90 días.
+- Definir por separado el aviso de vencimiento entre 0 y 90 días.
 - Crear operadores y asignarles los roles operador, administrador o Soporte de TI.
 - Editar los datos de cualquier operador, excepto su contraseña.
 - Cambiar los estados de operadores y definir las fechas de vacaciones.
@@ -134,7 +138,7 @@ Para obtener la contraseña de aplicación, activa la verificación en dos pasos
 
 ## Consultar y exportar ingresos
 
-En **Configuración → Resumen de ingresos**, selecciona las fechas **Desde** y **Hasta**. **Consultar** muestra los totales agrupados por moneda, método de pago y operador. Los importes de monedas diferentes se presentan por separado; no se convierten ni se suman entre monedas.
+En **Configuración → Resumen de ingresos**, selecciona las fechas **Desde** y **Hasta**. **Consultar** muestra únicamente los ingresos totales del período, separados entre VES y USD; si no hubo pagos en el lapso, muestra «Lapso de tiempo vacío». La información detallada de pagos, métodos y operadores está disponible solo en la exportación.
 
 **Exportar pagos y balance (Excel)** descarga un libro `.xlsx` para el mismo período, con columnas dimensionadas para facilitar la lectura, filtros en las tablas y estas hojas:
 

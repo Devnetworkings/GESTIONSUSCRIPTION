@@ -249,13 +249,11 @@ function xlsxZip(array $files): string
 
 try {
     $stmt = $pdo->prepare("
-        SELECT p.coin, p.metodo_pago, o.username AS operador,
-               COUNT(*) AS cantidad, SUM(p.monto) AS total
+        SELECT p.coin, SUM(p.monto) AS total
         FROM pagos p
-        LEFT JOIN operator o ON p.id_operador = o.id
         WHERE p.fecha_pago >= ? AND p.fecha_pago <= ?
-        GROUP BY p.coin, p.metodo_pago, o.username
-        ORDER BY p.coin, p.metodo_pago, o.username
+        GROUP BY p.coin
+        ORDER BY p.coin
     ");
     $stmt->execute([$desde, $hasta]);
     $totales = $stmt->fetchAll(PDO::FETCH_ASSOC);
